@@ -11,6 +11,7 @@ import SimpleTable from "@/components/SimpleTable";
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
   const [events, setEvents] = useState([]);
   const [mitigations, setMitigations] = useState([]);
   const [audits, setAudits] = useState([]);
@@ -22,14 +23,17 @@ export default function DashboardPage() {
     setError("");
 
     try {
-      const [metricsRes, eventsRes, mitigationsRes, auditsRes] = await Promise.all([
-        api.getMetrics(),
-        api.getEvents(5, 0),
-        api.getMitigations(),
-        api.getAudits(5, 0),
-      ]);
+      const [metricsRes, analyticsRes, eventsRes, mitigationsRes, auditsRes] =
+        await Promise.all([
+          api.getMetrics(),
+          api.getSecurityEventAnalytics(),
+          api.getSecurityEvents({ limit: 5 }),
+          api.getMitigations(),
+          api.getAudits(5, 0),
+        ]);
 
       setMetrics(metricsRes.data);
+      setAnalytics(analyticsRes.data);
       setEvents(eventsRes.data?.items || []);
       setMitigations(mitigationsRes.data?.items || []);
       setAudits(auditsRes.data?.items || []);
@@ -47,32 +51,26 @@ export default function DashboardPage() {
   const eventColumns = useMemo(
     () => [
       {
-        key: "timestamp",
+        key: "occurredAt",
         label: "Time",
-        render: (row) => formatTimestamp(row.timestamp),
+        render: (row) => formatTimestamp(row.occurredAt),
       },
-      { key: "source_ip", label: "Source IP" },
-      { key: "method", label: "Method" },
-      { key: "path", label: "Path" },
-      {
-        key: "rule",
-        label: "Rule",
-        render: (row) => row.findings?.[0]?.rule_id || "—",
-      },
+      { key: "sourceIp", label: "Source IP" },
+      { key: "httpMethod", label: "Method" },
+      { key: "requestPath", label: "Path" },
+      { key: "attackType", label: "Attack" },
       {
         key: "severity",
         label: "Severity",
-        render: (row) => {
-          const severity = row.findings?.[0]?.severity;
-          return severity ? (
-            <Badge className={severityClasses(severity)}>{severity}</Badge>
+        render: (row) =>
+          row.severity ? (
+            <Badge className={severityClasses(row.severity)}>{row.severity}</Badge>
           ) : (
-            "—"
-          );
-        },
+            "-"
+          ),
       },
     ],
-    []
+    [],
   );
 
   const mitigationColumns = useMemo(
@@ -90,7 +88,7 @@ export default function DashboardPage() {
         render: (row) => formatTimestamp(row.expires_at),
       },
     ],
-    []
+    [],
   );
 
   const auditColumns = useMemo(
@@ -105,7 +103,7 @@ export default function DashboardPage() {
       { key: "target", label: "Target" },
       { key: "result", label: "Result" },
     ],
-    []
+    [],
   );
 
   return (
@@ -129,23 +127,23 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title="Active Blocks"
-          value={metrics?.active_temp_blocks ?? (loading ? "…" : 0)}
+          value={metrics?.active_temp_blocks ?? (loading ? "..." : 0)}
           hint="Current active temporary mitigations"
         />
         <MetricCard
           title="Reputation Entries"
-          value={metrics?.reputation_entries ?? (loading ? "…" : 0)}
+          value={metrics?.reputation_entries ?? (loading ? "..." : 0)}
           hint="Tracked suspicious sources"
         />
         <MetricCard
-          title="Total Events"
-          value={metrics?.total_events ?? (loading ? "…" : 0)}
-          hint="Persisted security events"
+          title="Security Events"
+          value={analytics?.totals?.total ?? (loading ? "..." : 0)}
+          hint="Control-plane events in the current window"
         />
         <MetricCard
           title="Blocked Events"
-          value={metrics?.blocked_events ?? (loading ? "…" : 0)}
-          hint="Rejected security actions"
+          value={analytics?.totals?.blocked ?? (loading ? "..." : 0)}
+          hint="Blocked control-plane telemetry events"
         />
       </div>
 

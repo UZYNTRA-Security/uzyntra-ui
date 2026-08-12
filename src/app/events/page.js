@@ -2,40 +2,51 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { formatTimestamp, modeClasses, severityClasses } from "@/lib/format";
+import { formatTimestamp, severityClasses } from "@/lib/format";
 import SectionCard from "@/components/SectionCard";
 import Badge from "@/components/Badge";
 
 const DEFAULT_LIMIT = 10;
+
+const defaultFilters = {
+  source_ip: "",
+  attackType: "",
+  actionTaken: "",
+  severity: "",
+  method: "",
+  path_contains: "",
+  limit: DEFAULT_LIMIT,
+  cursor: "",
+  nextCursor: "",
+  hasMore: false,
+};
 
 export default function EventsPage() {
   const [rows, setRows] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const [filters, setFilters] = useState({
-    source_ip: "",
-    rule_id: "",
-    severity: "",
-    method: "",
-    path_contains: "",
-    limit: DEFAULT_LIMIT,
-    offset: 0,
-  });
+  const [filters, setFilters] = useState(defaultFilters);
 
   async function loadEvents(nextFilters = filters) {
     setLoading(true);
     setError("");
 
     try {
-      const response = await api.searchEvents(nextFilters);
+      const response = await api.getSecurityEvents(nextFilters);
       const items = response?.data?.items || [];
+      const pageInfo = response?.data?.pageInfo || {};
+
       setRows(items);
+      setFilters((current) => ({
+        ...current,
+        nextCursor: pageInfo.nextCursor || "",
+        hasMore: Boolean(pageInfo.hasMore),
+      }));
       setSelected((current) => {
         if (!items.length) return null;
         if (!current) return items[0];
-        return items.find((item) => item.request_id === current.request_id) || items[0];
+        return items.find((item) => item.id === current.id) || items[0];
       });
     } catch (err) {
       setError(err.message || "Failed to load events");
@@ -45,7 +56,7 @@ export default function EventsPage() {
   }
 
   useEffect(() => {
-    loadEvents(filters);
+    loadEvents(defaultFilters);
   }, []);
 
   function updateFilter(key, value) {
@@ -58,39 +69,29 @@ export default function EventsPage() {
   function applyFilters() {
     const next = {
       ...filters,
-      offset: 0,
+      cursor: "",
+      nextCursor: "",
+      hasMore: false,
     };
     setFilters(next);
     loadEvents(next);
   }
 
   function resetFilters() {
-    const next = {
-      source_ip: "",
-      rule_id: "",
-      severity: "",
-      method: "",
-      path_contains: "",
-      limit: DEFAULT_LIMIT,
-      offset: 0,
-    };
-    setFilters(next);
-    loadEvents(next);
+    setFilters(defaultFilters);
+    loadEvents(defaultFilters);
   }
 
   function nextPage() {
-    const next = {
-      ...filters,
-      offset: Number(filters.offset || 0) + Number(filters.limit || DEFAULT_LIMIT),
-    };
-    setFilters(next);
-    loadEvents(next);
-  }
+    if (!filters.nextCursor) {
+      return;
+    }
 
-  function prevPage() {
     const next = {
       ...filters,
-      offset: Math.max(0, Number(filters.offset || 0) - Number(filters.limit || DEFAULT_LIMIT)),
+      cursor: filters.nextCursor,
+      nextCursor: "",
+      hasMore: false,
     };
     setFilters(next);
     loadEvents(next);
@@ -103,7 +104,7 @@ export default function EventsPage() {
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Events Explorer</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Search, review, and inspect security events from the admin plane
+          Search, review, and inspect organization security events
         </p>
       </div>
 
@@ -130,37 +131,43 @@ export default function EventsPage() {
           <Field
             label="Source IP"
             value={filters.source_ip}
-            onChange={(e) => updateFilter("source_ip", e.target.value)}
-            placeholder="127.0.0.1"
+            onChange={(event) => updateFilter("source_ip", event.target.value)}
+            placeholder="203.0.113.10"
           />
           <Field
-            label="Rule ID"
-            value={filters.rule_id}
-            onChange={(e) => updateFilter("rule_id", e.target.value)}
-            placeholder="body.sqli.basic"
+            label="Attack type"
+            value={filters.attackType}
+            onChange={(event) => updateFilter("attackType", event.target.value)}
+            placeholder="sql_injection"
+          />
+          <SelectField
+            label="Action"
+            value={filters.actionTaken}
+            onChange={(event) => updateFilter("actionTaken", event.target.value)}
+            options={["", "blocked", "allowed", "rate_limited", "challenged"]}
           />
           <SelectField
             label="Severity"
             value={filters.severity}
-            onChange={(e) => updateFilter("severity", e.target.value)}
+            onChange={(event) => updateFilter("severity", event.target.value)}
             options={["", "critical", "high", "medium", "low"]}
           />
           <SelectField
             label="Method"
             value={filters.method}
-            onChange={(e) => updateFilter("method", e.target.value)}
+            onChange={(event) => updateFilter("method", event.target.value)}
             options={["", "GET", "POST", "PUT", "PATCH", "DELETE"]}
           />
           <Field
             label="Path contains"
             value={filters.path_contains}
-            onChange={(e) => updateFilter("path_contains", e.target.value)}
-            placeholder="/proxy/post"
+            onChange={(event) => updateFilter("path_contains", event.target.value)}
+            placeholder="/api/orders"
           />
           <SelectField
             label="Page size"
             value={filters.limit}
-            onChange={(e) => updateFilter("limit", Number(e.target.value))}
+            onChange={(event) => updateFilter("limit", Number(event.target.value))}
             options={[10, 20, 50]}
           />
         </div>
@@ -189,9 +196,9 @@ export default function EventsPage() {
                   <th className="px-3 py-3 font-medium">Source IP</th>
                   <th className="px-3 py-3 font-medium">Method</th>
                   <th className="px-3 py-3 font-medium">Path</th>
-                  <th className="px-3 py-3 font-medium">Rule</th>
+                  <th className="px-3 py-3 font-medium">Attack</th>
                   <th className="px-3 py-3 font-medium">Severity</th>
-                  <th className="px-3 py-3 font-medium">Mode</th>
+                  <th className="px-3 py-3 font-medium">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -203,40 +210,31 @@ export default function EventsPage() {
                   </tr>
                 ) : (
                   tableRows.map((row) => {
-                    const finding = row.findings?.[0];
-                    const active = selected?.request_id === row.request_id;
+                    const active = selected?.id === row.id;
 
                     return (
                       <tr
-                        key={row.request_id}
+                        key={row.id}
                         onClick={() => setSelected(row)}
                         className={`cursor-pointer border-b border-slate-100 align-top transition ${
                           active ? "bg-slate-50" : "hover:bg-slate-50/70"
                         }`}
                       >
-                        <td className="px-3 py-3">{formatTimestamp(row.timestamp)}</td>
-                        <td className="px-3 py-3">{row.source_ip}</td>
-                        <td className="px-3 py-3">{row.method}</td>
-                        <td className="px-3 py-3">{row.path}</td>
-                        <td className="px-3 py-3">{finding?.rule_id || "—"}</td>
+                        <td className="px-3 py-3">{formatTimestamp(row.occurredAt)}</td>
+                        <td className="px-3 py-3">{row.sourceIp || "-"}</td>
+                        <td className="px-3 py-3">{row.httpMethod || "-"}</td>
+                        <td className="px-3 py-3">{row.requestPath || "-"}</td>
+                        <td className="px-3 py-3">{row.attackType || "-"}</td>
                         <td className="px-3 py-3">
-                          {finding?.severity ? (
-                            <Badge className={severityClasses(finding.severity)}>
-                              {finding.severity}
+                          {row.severity ? (
+                            <Badge className={severityClasses(row.severity)}>
+                              {row.severity}
                             </Badge>
                           ) : (
-                            "—"
+                            "-"
                           )}
                         </td>
-                        <td className="px-3 py-3">
-                          {finding?.mode ? (
-                            <Badge className={modeClasses(finding.mode)}>
-                              {finding.mode}
-                            </Badge>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
+                        <td className="px-3 py-3">{row.actionTaken || "-"}</td>
                       </tr>
                     );
                   })
@@ -246,26 +244,15 @@ export default function EventsPage() {
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              Offset: {filters.offset} • Limit: {filters.limit}
-            </p>
+            <p className="text-xs text-slate-500">Limit: {filters.limit}</p>
 
-            <div className="flex gap-2">
-              <button
-                onClick={prevPage}
-                disabled={Number(filters.offset) <= 0 || loading}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <button
-                onClick={nextPage}
-                disabled={loading || tableRows.length < Number(filters.limit)}
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
+            <button
+              onClick={nextPage}
+              disabled={loading || !filters.hasMore}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
           </div>
         </SectionCard>
 
@@ -274,65 +261,41 @@ export default function EventsPage() {
             <div className="text-sm text-slate-500">Select an event to inspect details.</div>
           ) : (
             <div className="space-y-5">
-              <DetailItem label="Request ID" value={selected.request_id} />
-              <DetailItem label="Timestamp" value={formatTimestamp(selected.timestamp)} />
-              <DetailItem label="Source IP" value={selected.source_ip} />
-              <DetailItem label="Method" value={selected.method} />
-              <DetailItem label="Path" value={selected.path} />
+              <DetailItem label="Event ID" value={selected.id} />
+              <DetailItem label="Request ID" value={selected.requestId} />
+              <DetailItem label="Timestamp" value={formatTimestamp(selected.occurredAt)} />
+              <DetailItem label="Source IP" value={selected.sourceIp} />
+              <DetailItem label="Method" value={selected.httpMethod} />
+              <DetailItem label="Path" value={selected.requestPath} />
+              <DetailItem label="Attack Type" value={selected.attackType} />
+              <DetailItem label="Action" value={selected.actionTaken} />
+              <DetailItem
+                label="Confidence"
+                value={
+                  selected.confidence == null
+                    ? "-"
+                    : Number(selected.confidence).toFixed(2)
+                }
+              />
 
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Findings
+                  Metadata
                 </p>
-                <div className="space-y-3">
-                  {(selected.findings || []).map((finding, idx) => (
-                    <div
-                      key={`${finding.rule_id}-${idx}`}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-slate-900">{finding.rule_id}</p>
-                        <Badge className={severityClasses(finding.severity)}>
-                          {finding.severity}
-                        </Badge>
-                        <Badge className={modeClasses(finding.mode)}>{finding.mode}</Badge>
-                      </div>
-
-                      <p className="mt-2 text-sm text-slate-700">{finding.message}</p>
-
-                      <p className="mt-2 text-xs text-slate-500">
-                        Confidence: {Number(finding.confidence || 0).toFixed(2)}
-                      </p>
-
-                      {finding.evidence?.length ? (
-                        <div className="mt-3 space-y-2">
-                          {finding.evidence.map((evidence, evidenceIdx) => (
-                            <div
-                              key={`${finding.rule_id}-e-${evidenceIdx}`}
-                              className="rounded-lg border border-slate-200 bg-white p-3"
-                            >
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                {evidence.location}
-                              </p>
-                              <p className="mt-1 break-all font-mono text-xs text-slate-700">
-                                {evidence.value_preview}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs text-slate-700">
+                    {JSON.stringify(selected.rawMetadata || {}, null, 2)}
+                  </pre>
                 </div>
               </div>
 
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Decision Summary
+                  Delivery
                 </p>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm text-slate-800">
-                    {selected.decision?.summary || "—"}
+                    Received: {formatTimestamp(selected.receivedAt)}
                   </p>
                 </div>
               </div>
@@ -379,7 +342,7 @@ function DetailItem({ label, value }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 break-all text-sm text-slate-900">{value || "—"}</p>
+      <p className="mt-1 break-all text-sm text-slate-900">{value || "-"}</p>
     </div>
   );
 }

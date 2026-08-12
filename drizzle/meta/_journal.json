@@ -1,0 +1,69 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786529427186,
+      "tag": "0000_initial_control_plane_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786530104257,
+      "tag": "0001_control_plane_schema_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786530920875,
+      "tag": "0002_credential_password_security_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786531317846,
+      "tag": "0003_secure_session_management_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786536080235,
+      "tag": "0004_rbac_permission_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786540856476,
+      "tag": "0005_firewall_instance_scoped_authorization",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786541836067,
+      "tag": "0006_persistent_audit_trail_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786547842165,
+      "tag": "0007_api_keys_service_accounts_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786553165769,
+      "tag": "0008_security_event_ingestion_foundation",
+      "breakpoints": true
+    }
+  ]
+}

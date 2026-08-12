@@ -12,7 +12,7 @@ export default function Topbar() {
         </div>
 
         <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
-          Admin API: 127.0.0.1:9090
+          Admin API: /api/admin
         </div>
       </div>
     </header>

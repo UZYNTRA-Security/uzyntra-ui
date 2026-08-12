@@ -3,20 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "test:authz": "node --conditions=react-server scripts/test-authz.mjs",
+    "test:audit": "node --conditions=react-server scripts/test-audit.mjs",
+    "test:api-keys": "node --conditions=react-server scripts/test-api-keys.mjs",
+    "test:security-events": "node --conditions=react-server scripts/test-security-events.mjs",
+    "test:security-event-query": "node --conditions=react-server scripts/test-security-event-query.mjs",
+    "test:ingest": "node --conditions=react-server scripts/test-ingest-security-events.mjs"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "axios": "^1.14.0",
+    "drizzle-orm": "^0.45.2",
     "next": "16.2.1",
+    "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
+    "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4"
   }
 }
