@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -29,6 +30,12 @@ const lifecycleStatusCheck = (name, table) =>
 
 const apiKeyStatusCheck = (name, table) =>
   check(name, sql`${table.status} in ('active', 'revoked', 'expired', 'disabled', 'deleted')`);
+
+const invitationStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'accepted', 'revoked', 'expired')`);
+
+const enrollmentTokenStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'used', 'revoked', 'expired')`);
 
 const securityEventSeverityCheck = (name, table) =>
   check(name, sql`${table.severity} in ('low', 'medium', 'high', 'critical')`);
@@ -179,6 +186,34 @@ export const organizationMemberships = pgTable(
   ],
 );
 
+export const organizationInvitations = pgTable(
+  "organization_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    email: varchar("email", { length: 320 }).notNull(),
+    invitedByUserId: uuid("invited_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    roleId: uuid("role_id").references(() => roles.id, { onDelete: "set null" }),
+    tokenHash: text("token_hash").notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("organization_invitations_token_hash_idx").on(table.tokenHash),
+    index("organization_invitations_organization_id_idx").on(table.organizationId),
+    index("organization_invitations_email_idx").on(table.email),
+    index("organization_invitations_expires_at_idx").on(table.expiresAt),
+    invitationStatusCheck("organization_invitations_status_check", table),
+  ],
+);
+
 export const roles = pgTable(
   "roles",
   {
@@ -240,6 +275,23 @@ export const userRoles = pgTable(
   ],
 );
 
+export const serviceAccountRoles = pgTable(
+  "service_account_roles",
+  {
+    serviceAccountId: uuid("service_account_id")
+      .notNull()
+      .references(() => serviceAccounts.id, { onDelete: "cascade" }),
+    roleId: uuid("role_id")
+      .notNull()
+      .references(() => roles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serviceAccountId, table.roleId] }),
+    index("service_account_roles_role_id_idx").on(table.roleId),
+  ],
+);
+
 export const sessions = pgTable(
   "sessions",
   {
@@ -250,6 +302,10 @@ export const sessions = pgTable(
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
+    activeFirewallInstanceId: uuid("active_firewall_instance_id").references(
+      () => firewallInstances.id,
+      { onDelete: "set null" },
+    ),
     tokenHash: text("token_hash").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
@@ -262,6 +318,7 @@ export const sessions = pgTable(
     uniqueIndex("sessions_token_hash_idx").on(table.tokenHash),
     index("sessions_user_id_idx").on(table.userId),
     index("sessions_organization_id_idx").on(table.organizationId),
+    index("sessions_active_firewall_instance_id_idx").on(table.activeFirewallInstanceId),
     index("sessions_expires_at_idx").on(table.expiresAt),
   ],
 );
@@ -425,13 +482,62 @@ export const firewallInstances = pgTable(
     name: varchar("name", { length: 160 }).notNull(),
     environment: varchar("environment", { length: 64 }).notNull(),
     status: varchar("status", { length: 32 }).notNull().default("active"),
+    installationIdentifier: varchar("installation_identifier", { length: 160 }),
+    hostname: varchar("hostname", { length: 255 }),
+    region: varchar("region", { length: 80 }),
+    version: varchar("version", { length: 80 }),
+    enrolledAt: timestamp("enrolled_at", { withTimezone: true }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
     ...timestamps,
     ...deletedAt,
   },
   (table) => [
     uniqueIndex("firewall_instances_org_name_idx").on(table.organizationId, table.name),
+    uniqueIndex("firewall_instances_installation_identifier_idx")
+      .on(table.installationIdentifier)
+      .where(sql`installation_identifier IS NOT NULL`),
     index("firewall_instances_organization_id_idx").on(table.organizationId),
+    index("firewall_instances_organization_status_idx").on(table.organizationId, table.status),
     lifecycleStatusCheck("firewall_instances_status_check", table),
+  ],
+);
+
+export const firewallEnrollmentTokens = pgTable(
+  "firewall_enrollment_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("firewall_enrollment_tokens_token_hash_idx").on(table.tokenHash),
+    index("firewall_enrollment_tokens_organization_id_idx").on(table.organizationId),
+    index("firewall_enrollment_tokens_firewall_instance_id_idx").on(table.firewallInstanceId),
+    index("firewall_enrollment_tokens_expires_at_idx").on(table.expiresAt),
+    foreignKey({
+      name: "fet_organization_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "fet_firewall_instance_fk",
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "fet_created_by_user_fk",
+      columns: [table.createdByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    enrollmentTokenStatusCheck("firewall_enrollment_tokens_status_check", table),
   ],
 );
 
@@ -504,5 +610,40 @@ export const firewallInstanceRoleAssignments = pgTable(
     primaryKey({ columns: [table.firewallInstanceId, table.membershipId, table.roleId] }),
     index("firewall_instance_role_assignments_membership_id_idx").on(table.membershipId),
     index("firewall_instance_role_assignments_role_id_idx").on(table.roleId),
+  ],
+);
+
+export const firewallInstanceServiceAccountRoleAssignments = pgTable(
+  "firewall_instance_service_account_role_assignments",
+  {
+    firewallInstanceId: uuid("firewall_instance_id").notNull(),
+    serviceAccountId: uuid("service_account_id").notNull(),
+    roleId: uuid("role_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      name: "fisara_pk",
+      columns: [table.firewallInstanceId, table.serviceAccountId, table.roleId],
+    }),
+    foreignKey({
+      name: "fisara_firewall_instance_fk",
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "fisara_service_account_fk",
+      columns: [table.serviceAccountId],
+      foreignColumns: [serviceAccounts.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "fisara_role_fk",
+      columns: [table.roleId],
+      foreignColumns: [roles.id],
+    }).onDelete("cascade"),
+    index("firewall_instance_service_account_roles_service_account_id_idx").on(
+      table.serviceAccountId,
+    ),
+    index("firewall_instance_service_account_roles_role_id_idx").on(table.roleId),
   ],
 );

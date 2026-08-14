@@ -1,15 +1,15 @@
-import { cookies } from "next/headers";
-import {
-  getActiveSessionByToken,
-  sessionCookieName,
-  touchSession,
-} from "../../../../lib/auth/session.js";
+import { contextIdentity, getAuthenticatedContext } from "../../../../lib/auth/context.js";
 import {
   getAuthorizationContext,
+  getFirewallAuthorizationContext,
+  hasFirewallPermission,
   hasPermission,
   recordAuthorizationDecision,
 } from "../../../../lib/authz/index.js";
-import { requiredPermissionForAdminRoute } from "../../../../lib/authz/routes.js";
+import {
+  isFirewallScopedAdminPermission,
+  requiredPermissionForAdminRoute,
+} from "../../../../lib/authz/routes.js";
 
 const DEFAULT_ADMIN_URL = "http://127.0.0.1:9090";
 const FORWARDED_HEADERS = ["accept", "content-type"];
@@ -124,25 +124,8 @@ function clientSource(request) {
 }
 
 async function authenticatedIdentity() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(sessionCookieName())?.value;
-  if (!token) {
-    return null;
-  }
-
   try {
-    const session = await getActiveSessionByToken(token);
-    if (!session) {
-      return null;
-    }
-
-    await touchSession(session.id);
-
-    return {
-      userId: session.userId,
-      organizationId: session.organizationId,
-      sessionId: session.id,
-    };
+    return contextIdentity(await getAuthenticatedContext());
   } catch (error) {
     console.error("BFF session resolution failed", error);
     return null;
@@ -156,6 +139,9 @@ function setAuditHeaders(headers, request, routeConfig, pathSegments, identity, 
   headers.set("x-admin-audit-user-id", sanitizeHeaderValue(identity.userId));
   headers.set("x-admin-audit-organization-id", sanitizeHeaderValue(identity.organizationId));
   headers.set("x-admin-audit-session-id", sanitizeHeaderValue(identity.sessionId));
+  if (identity.activeFirewallInstanceId) {
+    headers.set("x-admin-audit-firewall-instance-id", sanitizeHeaderValue(identity.activeFirewallInstanceId));
+  }
   headers.set("x-admin-audit-permission", sanitizeHeaderValue(permission));
   headers.set("x-admin-audit-action", routeConfig.auditAction);
   headers.set("x-admin-audit-route", sanitizeHeaderValue(pathKey(pathSegments)));
@@ -276,16 +262,13 @@ async function proxyAdminRequest(request, context) {
 
   let authorizationContext;
   try {
-    authorizationContext = await getAuthorizationContext({
-      userId: identity.userId,
-      organizationId: identity.organizationId,
-    });
+    authorizationContext = await resolveAdminAuthorizationContext(identity, requiredPermission);
   } catch (error) {
     console.error("BFF authorization context resolution failed", error);
     return jsonError("authorization unavailable", 500);
   }
 
-  if (!hasPermission(authorizationContext, requiredPermission)) {
+  if (!isAdminPermissionAllowed(authorizationContext, identity, requiredPermission)) {
     recordAuthorizationDecision({
       result: "denied",
       userId: identity.userId,
@@ -360,6 +343,33 @@ async function proxyAdminRequest(request, context) {
     statusText: response.statusText,
     headers: responseHeaders,
   });
+}
+
+async function resolveAdminAuthorizationContext(identity, requiredPermission) {
+  if (isFirewallScopedAdminPermission(requiredPermission)) {
+    if (!identity.activeFirewallInstanceId) {
+      return null;
+    }
+
+    return getFirewallAuthorizationContext({
+      userId: identity.userId,
+      organizationId: identity.organizationId,
+      firewallInstanceId: identity.activeFirewallInstanceId,
+    });
+  }
+
+  return getAuthorizationContext({
+    userId: identity.userId,
+    organizationId: identity.organizationId,
+  });
+}
+
+function isAdminPermissionAllowed(context, identity, permission) {
+  if (isFirewallScopedAdminPermission(permission)) {
+    return hasFirewallPermission(context, identity.activeFirewallInstanceId, permission);
+  }
+
+  return hasPermission(context, permission);
 }
 
 export const GET = proxyAdminRequest;

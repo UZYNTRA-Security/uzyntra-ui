@@ -46,6 +46,15 @@ export async function handleSecurityEventsRequest({
 
   try {
     const filters = Object.fromEntries(new URL(request.url).searchParams.entries());
+    if (currentIdentity.activeFirewallInstanceId) {
+      if (
+        filters.firewallInstanceId &&
+        filters.firewallInstanceId !== currentIdentity.activeFirewallInstanceId
+      ) {
+        return jsonError("Forbidden", 403, requestId);
+      }
+      filters.firewallInstanceId = currentIdentity.activeFirewallInstanceId;
+    }
     const result = await querySecurityEvents({
       database,
       organizationId: currentIdentity.organizationId,
@@ -115,6 +124,15 @@ export async function handleSecurityEventAnalyticsRequest({
 
   try {
     const filters = Object.fromEntries(new URL(request.url).searchParams.entries());
+    if (currentIdentity.activeFirewallInstanceId) {
+      if (
+        filters.firewallInstanceId &&
+        filters.firewallInstanceId !== currentIdentity.activeFirewallInstanceId
+      ) {
+        return jsonError("Forbidden", 403, requestId);
+      }
+      filters.firewallInstanceId = currentIdentity.activeFirewallInstanceId;
+    }
     const analytics = await queryAnalytics({
       database,
       organizationId: currentIdentity.organizationId,

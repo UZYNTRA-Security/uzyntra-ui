@@ -14,10 +14,13 @@ export const PERMISSIONS = Object.freeze({
   POLICY_UPDATE: "policy.update",
   USERS_MANAGE: "users.manage",
   ROLES_MANAGE: "roles.manage",
+  ORGANIZATIONS_MANAGE: "organizations.manage",
+  ORGANIZATION_SETTINGS_MANAGE: "organization_settings.manage",
   API_KEYS_MANAGE: "api_keys.manage",
   SERVICE_ACCOUNTS_MANAGE: "service_accounts.manage",
   BILLING_MANAGE: "billing.manage",
   FIREWALLS_MANAGE: "firewalls.manage",
+  SECURITY_EVENTS_INGEST: "security_events.ingest",
 });
 
 export const PERMISSION_CATALOG = Object.freeze([
@@ -34,10 +37,13 @@ export const PERMISSION_CATALOG = Object.freeze([
   permission(PERMISSIONS.POLICY_UPDATE, "Update firewall policy"),
   permission(PERMISSIONS.USERS_MANAGE, "Manage organization users"),
   permission(PERMISSIONS.ROLES_MANAGE, "Manage organization roles"),
+  permission(PERMISSIONS.ORGANIZATIONS_MANAGE, "Manage organizations"),
+  permission(PERMISSIONS.ORGANIZATION_SETTINGS_MANAGE, "Manage organization settings"),
   permission(PERMISSIONS.API_KEYS_MANAGE, "Manage API keys"),
   permission(PERMISSIONS.SERVICE_ACCOUNTS_MANAGE, "Manage service accounts"),
   permission(PERMISSIONS.BILLING_MANAGE, "Manage billing settings"),
   permission(PERMISSIONS.FIREWALLS_MANAGE, "Manage firewall instances"),
+  permission(PERMISSIONS.SECURITY_EVENTS_INGEST, "Ingest security telemetry"),
 ]);
 
 export const DEFAULT_ROLES = Object.freeze([
@@ -54,6 +60,9 @@ export const DEFAULT_ROLES = Object.freeze([
     PERMISSIONS.REPUTATION_RESET,
     PERMISSIONS.POLICY_READ,
     PERMISSIONS.POLICY_UPDATE,
+    PERMISSIONS.FIREWALLS_MANAGE,
+    PERMISSIONS.API_KEYS_MANAGE,
+    PERMISSIONS.SERVICE_ACCOUNTS_MANAGE,
   ]),
   role("Analyst", "Investigate activity and review reputation", [
     PERMISSIONS.EVENTS_READ,

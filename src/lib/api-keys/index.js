@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "node:crypto";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { apiKeys, serviceAccounts } from "../../db/schema.js";
 import {
@@ -158,6 +158,113 @@ export async function createApiKey({
     plaintextKey,
     apiKey: publicApiKey(created),
   };
+}
+
+export async function listApiKeys({
+  database = db(),
+  organizationId,
+  limit = 100,
+} = {}) {
+  if (!organizationId) {
+    throw new Error("organizationId is required");
+  }
+
+  const boundedLimit = Math.min(Math.max(Number(limit) || 100, 1), 200);
+  const rows = await database
+    .select()
+    .from(apiKeys)
+    .where(and(eq(apiKeys.organizationId, organizationId), isNull(apiKeys.deletedAt)))
+    .orderBy(desc(apiKeys.createdAt))
+    .limit(boundedLimit);
+
+  return rows.map(publicApiKey);
+}
+
+export async function createOrganizationApiKey({
+  database = db(),
+  organizationId,
+  serviceAccountId,
+  name,
+  expiresAt,
+  auditContext,
+} = {}) {
+  if (serviceAccountId) {
+    const [serviceAccount] = await database
+      .select({ id: serviceAccounts.id })
+      .from(serviceAccounts)
+      .where(
+        and(
+          eq(serviceAccounts.id, serviceAccountId),
+          eq(serviceAccounts.organizationId, organizationId),
+          eq(serviceAccounts.status, "active"),
+          isNull(serviceAccounts.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!serviceAccount) {
+      throw new Error("service account is not available");
+    }
+  }
+
+  return createApiKey({ database, organizationId, serviceAccountId, name, expiresAt, auditContext });
+}
+
+export async function revokeOrganizationApiKey({
+  database = db(),
+  organizationId,
+  apiKeyId,
+  auditContext,
+  now = new Date(),
+} = {}) {
+  const [key] = await database
+    .select()
+    .from(apiKeys)
+    .where(and(eq(apiKeys.id, apiKeyId), eq(apiKeys.organizationId, organizationId)))
+    .limit(1);
+
+  if (!key) {
+    return null;
+  }
+
+  return revokeApiKey({ database, apiKeyId, auditContext, now });
+}
+
+export async function rotateOrganizationApiKey({
+  database = db(),
+  organizationId,
+  apiKeyId,
+  replacementName,
+  auditContext,
+  now = new Date(),
+} = {}) {
+  return database.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(apiKeys)
+      .where(
+        and(
+          eq(apiKeys.id, apiKeyId),
+          eq(apiKeys.organizationId, organizationId),
+          eq(apiKeys.status, API_KEY_STATUSES.ACTIVE),
+          isNull(apiKeys.revokedAt),
+          isNull(apiKeys.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!existing) {
+      return null;
+    }
+
+    return rotateApiKey({
+      database: tx,
+      apiKeyId,
+      replacementName,
+      auditContext,
+      now,
+    });
+  });
 }
 
 export async function revokeApiKey({

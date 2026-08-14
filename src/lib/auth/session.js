@@ -31,6 +31,7 @@ export async function createSession({
   database = db(),
   userId,
   organizationId,
+  activeFirewallInstanceId,
   expiresAt = sessionExpiresAt(),
   ipAddress,
   userAgent,
@@ -47,6 +48,7 @@ export async function createSession({
     .values({
       userId,
       organizationId,
+      activeFirewallInstanceId: activeFirewallInstanceId || null,
       tokenHash,
       expiresAt,
       lastSeenAt: now,
@@ -56,6 +58,44 @@ export async function createSession({
     .returning();
 
   return { token, tokenHash, session };
+}
+
+export async function updateSessionOrganization({
+  database = db(),
+  sessionId,
+  organizationId,
+  now = new Date(),
+} = {}) {
+  if (!sessionId || !organizationId) {
+    throw new Error("sessionId and organizationId are required");
+  }
+
+  const [session] = await database
+    .update(sessions)
+    .set({ organizationId, activeFirewallInstanceId: null, lastSeenAt: now })
+    .where(and(eq(sessions.id, sessionId), isNull(sessions.revokedAt), gt(sessions.expiresAt, now)))
+    .returning();
+
+  return session || null;
+}
+
+export async function updateSessionActiveFirewall({
+  database = db(),
+  sessionId,
+  firewallInstanceId,
+  now = new Date(),
+} = {}) {
+  if (!sessionId) {
+    throw new Error("sessionId is required");
+  }
+
+  const [session] = await database
+    .update(sessions)
+    .set({ activeFirewallInstanceId: firewallInstanceId || null, lastSeenAt: now })
+    .where(and(eq(sessions.id, sessionId), isNull(sessions.revokedAt), gt(sessions.expiresAt, now)))
+    .returning();
+
+  return session || null;
 }
 
 export async function getActiveSessionByToken(token, { database = db(), now = new Date() } = {}) {

@@ -1,10 +1,5 @@
-import { cookies } from "next/headers";
 import { db } from "../../../db/client.js";
-import {
-  getActiveSessionByToken,
-  sessionCookieName,
-  touchSession,
-} from "../../../lib/auth/session.js";
+import { contextIdentity, getAuthenticatedContext } from "../../../lib/auth/context.js";
 import { handleSecurityEventsRequest } from "../../../lib/security-events/api.js";
 
 export const dynamic = "force-dynamic";
@@ -20,25 +15,8 @@ export async function GET(request) {
 }
 
 async function authenticatedIdentity(database) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(sessionCookieName())?.value;
-  if (!token) {
-    return null;
-  }
-
   try {
-    const session = await getActiveSessionByToken(token, { database });
-    if (!session) {
-      return null;
-    }
-
-    await touchSession(session.id, { database });
-
-    return {
-      userId: session.userId,
-      organizationId: session.organizationId,
-      sessionId: session.id,
-    };
+    return contextIdentity(await getAuthenticatedContext({ database }));
   } catch (error) {
     console.error("Security event session resolution failed", error);
     return null;

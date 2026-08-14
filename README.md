@@ -163,6 +163,7 @@ DATABASE_POOL_SIZE=10
 AUTH_PASSWORD_PEPPER=<at-least-32-random-characters>
 AUTH_SESSION_SECRET=<at-least-32-random-characters>
 AUTH_API_KEY_SECRET=<at-least-32-random-characters>
+AUTH_MANAGEMENT_TOKEN_SECRET=<at-least-32-random-characters>
 FIREWALL_ADMIN_URL=http://127.0.0.1:9090
 FIREWALL_ADMIN_TOKEN=<admin-token>
 BFF_ADMIN_TIMEOUT_MS=10000
@@ -213,6 +214,7 @@ api_keys.manage
 service_accounts.manage
 billing.manage
 firewalls.manage
+security_events.ingest
 ```
 
 Default role templates are seeded as global roles:
@@ -245,7 +247,7 @@ hasAnyPermission()
 hasAllPermissions()
 ```
 
-The BFF maps each allowed admin route to a required organization-level permission before forwarding to the Rust Admin API. Missing permissions return `403 Forbidden`; missing or invalid sessions return `401 Unauthorized`.
+The BFF maps each allowed admin route to a required permission before forwarding to the Rust Admin API. Organization-level routes such as metrics and audits use organization permissions. Firewall routes for events, policy, mitigations, and reputation require an active server-side firewall selection plus a firewall-scoped role assignment. Missing permissions return `403 Forbidden`; missing or invalid sessions return `401 Unauthorized`.
 
 Firewall-instance scoped authorization extends the same role model with `firewall_instance_role_assignments`:
 
@@ -264,7 +266,31 @@ hasFirewallPermission()
 
 Those helpers verify the firewall belongs to the authenticated organization and derive permissions from roles assigned to that specific firewall instance. Organization-level permission alone does not grant firewall-instance access.
 
-Authorization context is derived from the database and validated session identity, never from browser-supplied role, permission, organization, or firewall values. UI hiding, request-level caching, Redis caching, permission versioning, and BFF firewall-instance enforcement are future phases.
+Authorization context is derived from the database and validated session identity, never from browser-supplied role, permission, organization, or firewall values. UI hiding is treated as a convenience only; server-side route handlers enforce tenant and firewall boundaries.
+
+---
+
+## Multi-Tenant SaaS Management
+
+Authenticated operators can manage SaaS tenant resources through server-side APIs and console pages for:
+
+```text
+organizations
+organization settings
+members and invitations
+firewall registration and enrollment
+active firewall selection
+service accounts
+API keys
+```
+
+Organization switching updates the PostgreSQL-backed session after verifying active membership. The browser cannot override organization scope with arbitrary IDs.
+
+Invitations and firewall enrollment use random one-time credentials. The plaintext value is returned only once; PostgreSQL stores only an HMAC hash using `AUTH_MANAGEMENT_TOKEN_SECRET`. Invitation and enrollment records are organization-scoped, expiring, revocable, and audited without credential values.
+
+Firewall registration creates a disabled instance until enrollment succeeds. Enrollment activates the firewall, records installation metadata, creates or reactivates a machine service account, and returns one plaintext API key once for ingestion setup.
+
+API key creation, rotation, revocation, and listing are organization-scoped. Rotation creates a replacement before revoking the old key in a transaction. Listing returns metadata only.
 
 ---
 
@@ -299,13 +325,11 @@ Application code does not expose audit update or delete utilities. Future harden
 
 ## API Key Foundation
 
-Service accounts represent non-interactive machine identities owned by an organization. API keys may be attached to a service account and are generated as one-time plaintext secrets. The database stores only a display prefix and a server-side HMAC hash derived with `AUTH_API_KEY_SECRET`; plaintext API keys are never stored or returned after creation.
+Service accounts represent non-interactive machine identities owned by an organization. API keys may be attached to a service account and are generated as one-time plaintext secrets. The database stores only a display prefix and a server-side HMAC hash derived with `AUTH_API_KEY_SECRET`; plaintext API keys are never stored or returned after creation or rotation.
 
 API keys support `active`, `revoked`, and `expired` runtime states, with `disabled` and `deleted` reserved by the lifecycle schema. Revocation records `revoked_at`, rotation creates a replacement key before revoking the old key, and API-key lifecycle changes write audit events without plaintext keys, hashes, tokens, or secrets.
 
-The scoping foundation is organization ownership plus optional service-account ownership. Future permission assignment should reuse the existing roles and permissions model for service accounts instead of letting API keys carry browser-supplied scopes.
-
-This foundation does not expose API-key management routes, browser workflows, gateway authentication, service-account permission assignment, or Rust Firewall Engine API-key verification yet.
+The scoping foundation is organization ownership plus optional service-account ownership. Service-account roles reuse the same role and permission catalog instead of letting API keys carry browser-supplied scopes.
 
 ---
 
@@ -342,7 +366,7 @@ GET /api/security-events/analytics
 
 The list endpoint requires `events.read` and supports bounded filters for severity, attack type, action, source IP, HTTP method, request path, firewall instance, time window, limit, and cursor pagination. The analytics endpoint requires `metrics.read` and returns event totals, severity counts, top attack types, top source IPs, top routes, firewall distribution, and hourly timeline counts.
 
-The browser does not provide organization scope. Both APIs derive organization identity from the server-side session and authorization context.
+The browser does not provide organization scope. Both APIs derive organization identity from the server-side session and authorization context. When the session has an active firewall, event APIs force that firewall scope and reject cross-firewall substitution.
 
 ---
 
@@ -357,7 +381,7 @@ npm run db:generate
 npm run db:migrate
 ```
 
-The migrations create the database foundation for organizations, organization settings, users, credentials, email verification tokens, password reset tokens, memberships, roles, permissions, sessions, API keys, service accounts, audit actors, audit events, security events, firewall instances, and firewall-instance role assignments. Lifecycle-aware entities use `status` plus `deleted_at` so security-sensitive records can be disabled or soft-deleted without losing history. Password hashes use server-side Argon2id utilities with `AUTH_PASSWORD_PEPPER` reserved for runtime credential operations. Session helpers use opaque random tokens, hashed storage, revocation timestamps, and `AUTH_SESSION_SECRET` for server-side token hashing. API-key helpers generate one-time plaintext keys, store only prefixes and HMAC hashes using `AUTH_API_KEY_SECRET`, and audit lifecycle events. Security-event helpers normalize firewall telemetry, validate organization/firewall ownership, and reject secret metadata before insertion. The RBAC seed migration inserts the canonical permission catalog and default role templates idempotently. It does not implement password reset flows, customer-facing API-key management, service-account permission enforcement, telemetry dashboards, alerting, or SIEM integrations.
+The migrations create the database foundation for organizations, organization settings, users, credentials, email verification tokens, password reset tokens, memberships, invitations, roles, permissions, sessions, API keys, service accounts, service-account roles, audit actors, audit events, security events, firewall instances, firewall enrollment tokens, and firewall-instance role assignments. Lifecycle-aware entities use `status` plus `deleted_at` so security-sensitive records can be disabled or soft-deleted without losing history. Password hashes use server-side Argon2id utilities with `AUTH_PASSWORD_PEPPER` reserved for runtime credential operations. Session helpers use opaque random tokens, hashed storage, revocation timestamps, active organization context, optional active firewall context, and `AUTH_SESSION_SECRET` for server-side token hashing. API-key helpers generate one-time plaintext keys, store only prefixes and HMAC hashes using `AUTH_API_KEY_SECRET`, and audit lifecycle events. Management-token helpers hash invitation and enrollment credentials using `AUTH_MANAGEMENT_TOKEN_SECRET`. Security-event helpers normalize firewall telemetry, validate organization/firewall ownership, and reject secret metadata before insertion. The RBAC seed migration inserts the canonical permission catalog and default role templates idempotently. It does not implement billing, SAML, SCIM, OIDC, MFA behavior, email delivery, alerting, SIEM integrations, or Rust detection changes.
 
 ---
 

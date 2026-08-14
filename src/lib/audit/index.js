@@ -30,6 +30,25 @@ export const AUDIT_EVENT_TYPES = Object.freeze({
   MITIGATION_DELETED: "mitigation.deleted",
   USER_CREATED: "user.created",
   ROLE_UPDATED: "role.updated",
+  ORGANIZATION_CREATED: "organization.created",
+  ORGANIZATION_UPDATED: "organization.updated",
+  ORGANIZATION_SWITCHED: "organization.switched",
+  ORGANIZATION_SETTINGS_UPDATED: "org.settings_updated",
+  MEMBER_INVITED: "member.invited",
+  MEMBER_JOINED: "member.joined",
+  MEMBER_DISABLED: "member.disabled",
+  MEMBER_REACTIVATED: "member.reactivated",
+  MEMBER_ROLE_CHANGED: "member.role_changed",
+  INVITATION_REVOKED: "member.invitation_revoked",
+  FIREWALL_REGISTERED: "firewall.registered",
+  FIREWALL_ENROLLMENT_TOKEN_CREATED: "firewall.enrollment_token_created",
+  FIREWALL_ENROLLED: "firewall.enrolled",
+  FIREWALL_DISABLED: "firewall.disabled",
+  FIREWALL_ENROLLMENT_FAILED: "firewall.enrollment_failed",
+  SERVICE_ACCOUNT_CREATED: "service_account.created",
+  SERVICE_ACCOUNT_DISABLED: "service_account.disabled",
+  SERVICE_ACCOUNT_REACTIVATED: "service_account.reactivated",
+  SERVICE_ACCOUNT_DELETED: "service_account.deleted",
   API_KEY_CREATED: "api_key.created",
   API_KEY_REVOKED: "api_key.revoked",
   API_KEY_ROTATED: "api_key.rotated",
@@ -119,7 +138,7 @@ function firstSensitivePath(value, path = []) {
 }
 
 function isSensitiveKey(key) {
-  return /password|secret|token|cookie|authorization|private[_-]?key|session[_-]?id|session|key[_-]?hash|password[_-]?hash|x[_-]?admin[_-]?token/i.test(
+  return /password|secret|token|cookie|authorization|private[_-]?key|session[_-]?id|key[_-]?hash|password[_-]?hash|x[_-]?admin[_-]?token/i.test(
     key,
   );
 }

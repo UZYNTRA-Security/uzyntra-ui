@@ -10,6 +10,8 @@ import {
   permissions,
   rolePermissions,
   roles,
+  serviceAccountRoles,
+  serviceAccounts,
   userRoles,
   users,
 } from "../../db/schema.js";
@@ -123,6 +125,47 @@ export async function getFirewallAuthorizationContext({
   return buildFirewallAuthorizationContext(rows);
 }
 
+export async function getServiceAccountAuthorizationContext({
+  database = db(),
+  serviceAccountId,
+  organizationId,
+} = {}) {
+  if (!serviceAccountId || !organizationId) {
+    throw new Error("serviceAccountId and organizationId are required");
+  }
+
+  const rows = await database
+    .select({
+      serviceAccountId: serviceAccounts.id,
+      serviceAccountStatus: serviceAccounts.status,
+      serviceAccountDeletedAt: serviceAccounts.deletedAt,
+      organizationId: serviceAccounts.organizationId,
+      roleId: roles.id,
+      roleName: roles.name,
+      roleOrganizationId: roles.organizationId,
+      permissionKey: permissions.key,
+    })
+    .from(serviceAccounts)
+    .leftJoin(serviceAccountRoles, eq(serviceAccountRoles.serviceAccountId, serviceAccounts.id))
+    .leftJoin(
+      roles,
+      and(
+        eq(roles.id, serviceAccountRoles.roleId),
+        or(isNull(roles.organizationId), eq(roles.organizationId, organizationId)),
+      ),
+    )
+    .leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+    .leftJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+    .where(
+      and(
+        eq(serviceAccounts.id, serviceAccountId),
+        eq(serviceAccounts.organizationId, organizationId),
+      ),
+    );
+
+  return buildServiceAccountAuthorizationContext(rows);
+}
+
 export function buildAuthorizationContext(rows) {
   if (!Array.isArray(rows) || rows.length === 0) {
     return null;
@@ -191,6 +234,45 @@ export function buildFirewallAuthorizationContext(rows) {
     organizationId: base.organizationId,
     membershipId: base.membershipId,
     firewallInstanceId: base.firewallInstanceId,
+    roles: [...roleMap.values()],
+    permissions: [...permissionSet].sort(),
+  };
+}
+
+export function buildServiceAccountAuthorizationContext(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return null;
+  }
+
+  const base = rows[0];
+  if (
+    base.serviceAccountStatus !== "active" ||
+    base.serviceAccountDeletedAt ||
+    !base.organizationId
+  ) {
+    return null;
+  }
+
+  const roleMap = new Map();
+  const permissionSet = new Set();
+
+  rows.forEach((row) => {
+    if (row.roleId) {
+      roleMap.set(row.roleId, {
+        id: row.roleId,
+        name: row.roleName,
+        organizationId: row.roleOrganizationId || null,
+      });
+    }
+
+    if (row.permissionKey) {
+      permissionSet.add(row.permissionKey);
+    }
+  });
+
+  return {
+    serviceAccountId: base.serviceAccountId,
+    organizationId: base.organizationId,
     roles: [...roleMap.values()],
     permissions: [...permissionSet].sort(),
   };

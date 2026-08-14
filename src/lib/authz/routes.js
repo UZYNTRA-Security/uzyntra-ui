@@ -28,6 +28,21 @@ export function requiredPermissionForAdminRoute(method, pathKey) {
   return route?.permission || null;
 }
 
+export function isFirewallScopedAdminPermission(permission) {
+  return FIREWALL_SCOPED_ADMIN_PERMISSIONS.has(permission);
+}
+
 function adminRoute(method, pattern, permission) {
   return Object.freeze({ method, pattern, permission });
 }
+
+const FIREWALL_SCOPED_ADMIN_PERMISSIONS = new Set([
+  PERMISSIONS.EVENTS_READ,
+  PERMISSIONS.MITIGATION_READ,
+  PERMISSIONS.MITIGATION_CREATE,
+  PERMISSIONS.MITIGATION_DELETE,
+  PERMISSIONS.REPUTATION_READ,
+  PERMISSIONS.REPUTATION_RESET,
+  PERMISSIONS.POLICY_READ,
+  PERMISSIONS.POLICY_UPDATE,
+]);

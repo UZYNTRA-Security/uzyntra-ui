@@ -64,6 +64,13 @@
       "when": 1786553165769,
       "tag": "0008_security_event_ingestion_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786668308521,
+      "tag": "0009_multi_tenant_saas_management",
+      "breakpoints": true
     }
   ]
 }

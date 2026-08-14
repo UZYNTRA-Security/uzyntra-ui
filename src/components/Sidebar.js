@@ -11,6 +11,11 @@ const links = [
   { href: "/reputation", label: "Reputation" },
   { href: "/audits", label: "Audits" },
   { href: "/policy", label: "Policy" },
+  { href: "/firewalls", label: "Firewalls" },
+  { href: "/team", label: "Team" },
+  { href: "/service-accounts", label: "Service Accounts" },
+  { href: "/api-keys", label: "API Keys" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export default function Sidebar() {

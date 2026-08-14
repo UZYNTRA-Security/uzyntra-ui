@@ -96,4 +96,89 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ path_prefix }),
     }),
+
+  me: () => request("/api/auth/me"),
+  getOrganizations: () => request("/api/organizations"),
+  createOrganization: ({ name, slug }) =>
+    request("/api/organizations", {
+      method: "POST",
+      body: JSON.stringify({ name, slug }),
+    }),
+  switchOrganization: (organizationId) =>
+    request("/api/organizations/switch", {
+      method: "POST",
+      body: JSON.stringify({ organizationId }),
+    }),
+  getRoles: () => request("/api/roles"),
+  getMembers: () => request("/api/members"),
+  updateMemberStatus: (membershipId, status) =>
+    request(`/api/members/${membershipId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  assignMemberRole: (membershipId, roleId) =>
+    request(`/api/members/${membershipId}/roles`, {
+      method: "POST",
+      body: JSON.stringify({ roleId }),
+    }),
+  removeMemberRole: (membershipId, roleId) =>
+    request(`/api/members/${membershipId}/roles`, {
+      method: "DELETE",
+      body: JSON.stringify({ roleId }),
+    }),
+  getInvitations: () => request("/api/invitations"),
+  createInvitation: ({ email, roleId }) =>
+    request("/api/invitations", {
+      method: "POST",
+      body: JSON.stringify({ email, roleId }),
+    }),
+  revokeInvitation: (invitationId) =>
+    request(`/api/invitations/${invitationId}/revoke`, { method: "POST" }),
+  getFirewalls: () => request("/api/firewalls"),
+  registerFirewall: ({ name, environment, region, hostname }) =>
+    request("/api/firewalls", {
+      method: "POST",
+      body: JSON.stringify({ name, environment, region, hostname }),
+    }),
+  createEnrollmentToken: (firewallId) =>
+    request(`/api/firewalls/${firewallId}/enrollment-token`, { method: "POST" }),
+  disableFirewall: (firewallId) =>
+    request(`/api/firewalls/${firewallId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "disabled" }),
+    }),
+  selectFirewall: (firewallInstanceId) =>
+    request("/api/firewalls/select", {
+      method: "POST",
+      body: JSON.stringify({ firewallInstanceId }),
+    }),
+  getServiceAccounts: () => request("/api/service-accounts"),
+  createServiceAccount: ({ name, roleId }) =>
+    request("/api/service-accounts", {
+      method: "POST",
+      body: JSON.stringify({ name, roleId }),
+    }),
+  updateServiceAccountStatus: (serviceAccountId, status) =>
+    request(`/api/service-accounts/${serviceAccountId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  getApiKeys: () => request("/api/api-keys"),
+  createApiKey: ({ name, serviceAccountId, expiresAt }) =>
+    request("/api/api-keys", {
+      method: "POST",
+      body: JSON.stringify({ name, serviceAccountId, expiresAt }),
+    }),
+  revokeApiKey: (apiKeyId) => request(`/api/api-keys/${apiKeyId}/revoke`, { method: "POST" }),
+  rotateApiKey: (apiKeyId, replacementName) =>
+    request(`/api/api-keys/${apiKeyId}/rotate`, {
+      method: "POST",
+      body: JSON.stringify({ replacementName }),
+    }),
+  getOrganizationSettings: () => request("/api/organization-settings"),
+  updateOrganizationSettings: (settings) =>
+    request("/api/organization-settings", {
+      method: "PATCH",
+      body: JSON.stringify(settings),
+    }),
 };
