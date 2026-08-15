@@ -41,6 +41,11 @@ const validPayload = {
   userAgent: "uzyntra-firewall/0.1",
   country: "US",
   confidence: 0.98,
+  detectorId: "UZ-SQLI-001",
+  detectorIds: ["UZ-SQLI-001"],
+  score: 81.2,
+  apiRouteId: "/api/{id}",
+  anomalyType: "injection",
   actionTaken: "blocked",
   requestId: "firewall-request-1",
   rawMetadata: { ruleIds: ["sql.union.select"] },
@@ -61,6 +66,7 @@ assert.equal(validResponse.status, 201);
 assert.equal(validBody.success, true);
 assert.equal(validBody.eventId, "security-event-1");
 assert.ok(validWrites.find((write) => write.actionTaken === "blocked"));
+assert.ok(validWrites.find((write) => write.routeTemplate === "/api/{id}"));
 assert.ok(validWrites.find((write) => write.eventType === "security_event.ingested"));
 assert.equal(JSON.stringify(validWrites).includes(plaintextKey), false);
 assert.equal(JSON.stringify(validWrites).includes(apiKey.keyHash), false);
@@ -159,6 +165,10 @@ function fakeDatabase({ authRow, firewall, writes = [] } = {}) {
           writes.push(value);
           return {
             async returning() {
+              if (value.routeTemplate) {
+                return [{ id: "api-inventory-route-1", ...value }];
+              }
+
               if (value.actionTaken) {
                 return [{ id: "security-event-1", ...value }];
               }

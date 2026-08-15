@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { firewallInstances, securityEvents } from "../../db/schema.js";
+import { upsertApiInventoryFromSecurityEvent } from "../api-inventory/index.js";
 
 export const SECURITY_EVENT_TYPES = Object.freeze({
   ATTACK: "attack",
@@ -16,6 +17,20 @@ export const SECURITY_ATTACK_TYPES = Object.freeze({
   COMMAND_INJECTION: "command_injection",
   PATH_TRAVERSAL: "path_traversal",
   CREDENTIAL_ATTACK: "credential_attack",
+  SSRF: "ssrf",
+  REQUEST_SMUGGLING: "request_smuggling",
+  SCHEMA_VIOLATION: "schema_violation",
+  OBJECT_ENUMERATION: "object_enumeration",
+  TENANT_BOUNDARY_VIOLATION: "tenant_boundary_violation",
+  SHADOW_API: "shadow_api",
+  API_INVENTORY: "api_inventory",
+  RESOURCE_ABUSE: "resource_abuse",
+  SECURITY_MISCONFIGURATION: "security_misconfiguration",
+  RESPONSE_LEAK: "response_leak",
+  PAYLOAD_EVASION: "payload_evasion",
+  METHOD_ABUSE: "method_abuse",
+  BEHAVIOR_ANOMALY: "behavior_anomaly",
+  RATE_LIMIT_EXCEEDED: "rate_limit_exceeded",
 });
 
 export const SECURITY_EVENT_SEVERITIES = Object.freeze({
@@ -38,6 +53,7 @@ export async function createSecurityEvent({ database = db(), ...event } = {}) {
   await validateFirewallOwnership(database, values.organizationId, values.firewallInstanceId);
 
   const [created] = await database.insert(securityEvents).values(values).returning();
+  await upsertApiInventoryFromSecurityEvent({ database, event: created });
   return created;
 }
 
@@ -58,6 +74,11 @@ export function normalizeSecurityEvent(event = {}) {
     userAgent: nullableCleanString(event.userAgent, 1024),
     country: nullableCountry(event.country),
     confidence: nullableConfidence(event.confidence),
+    detectorId: nullableDetectorId(event.detectorId || event.detector_id),
+    detectorIds: normalizeDetectorIds(event.detectorIds || event.detector_ids),
+    score: nullableScore(event.score),
+    apiRouteId: nullableCleanString(event.apiRouteId || event.api_route_id, 2048),
+    anomalyType: nullableToken(event.anomalyType || event.anomaly_type, "anomalyType", 80),
     actionTaken: normalizedEnum(
       event.actionTaken,
       Object.values(SECURITY_EVENT_ACTIONS),
@@ -77,6 +98,9 @@ export function validateSecurityEvent(event = {}) {
   normalizedEnum(event.severity, Object.values(SECURITY_EVENT_SEVERITIES), "security event severity");
   normalizedEnum(event.actionTaken, Object.values(SECURITY_EVENT_ACTIONS), "security event action");
   nullableConfidence(event.confidence);
+  nullableDetectorId(event.detectorId);
+  normalizeDetectorIds(event.detectorIds);
+  nullableScore(event.score);
   requiredDate(event.occurredAt, "occurredAt");
   sanitizeMetadata(event.rawMetadata);
 
@@ -197,6 +221,14 @@ function normalizedToken(value, label, maxLength) {
   return normalized.slice(0, maxLength);
 }
 
+function nullableToken(value, label, maxLength) {
+  if (!value) {
+    return null;
+  }
+
+  return normalizedToken(value, label, maxLength);
+}
+
 function requiredString(value, label) {
   const text = String(value || "").trim();
   if (!text) {
@@ -263,6 +295,39 @@ function nullableConfidence(value) {
   }
 
   return confidence;
+}
+
+function nullableScore(value) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  const score = Number(value);
+  if (!Number.isFinite(score) || score < 0 || score > 100) {
+    throw new Error("score must be between 0 and 100");
+  }
+
+  return score;
+}
+
+function nullableDetectorId(value) {
+  if (!value) {
+    return null;
+  }
+
+  return normalizedToken(value, "detectorId", 80);
+}
+
+function normalizeDetectorIds(value) {
+  if (value == null || value === "") {
+    return [];
+  }
+
+  const items = Array.isArray(value) ? value : [value];
+  return Array.from(new Set(items.map((item) => nullableDetectorId(item)).filter(Boolean))).slice(
+    0,
+    50,
+  );
 }
 
 function requiredDate(value, label) {

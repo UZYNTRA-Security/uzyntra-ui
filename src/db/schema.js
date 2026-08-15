@@ -560,6 +560,14 @@ export const securityEvents = pgTable(
     userAgent: text("user_agent"),
     country: varchar("country", { length: 2 }),
     confidence: real("confidence"),
+    detectorId: varchar("detector_id", { length: 80 }),
+    detectorIds: text("detector_ids")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    score: real("score"),
+    apiRouteId: text("api_route_id"),
+    anomalyType: varchar("anomaly_type", { length: 80 }),
     actionTaken: varchar("action_taken", { length: 32 }).notNull(),
     requestId: varchar("request_id", { length: 160 }),
     rawMetadata: jsonb("raw_metadata").notNull().default(sql`'{}'::jsonb`),
@@ -586,9 +594,102 @@ export const securityEvents = pgTable(
       table.occurredAt,
     ),
     index("security_events_request_id_idx").on(table.requestId),
+    index("security_events_detector_idx").on(table.organizationId, table.detectorId),
+    index("security_events_api_route_idx").on(table.organizationId, table.apiRouteId),
     securityEventSeverityCheck("security_events_severity_check", table),
     securityEventActionCheck("security_events_action_taken_check", table),
     check("security_events_confidence_check", sql`${table.confidence} between 0 and 1`),
+    check("security_events_score_check", sql`${table.score} between 0 and 100`),
+  ],
+);
+
+export const apiInventoryRoutes = pgTable(
+  "api_inventory_routes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id").notNull(),
+    routeTemplate: text("route_template").notNull(),
+    methods: text("methods")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("new"),
+    observedRequestCount: integer("observed_request_count").notNull().default(0),
+    observedStatusCodes: integer("observed_status_codes")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::integer[]`),
+    contentTypes: text("content_types")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    learnedSchemaSummary: jsonb("learned_schema_summary").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("api_inventory_route_unique_idx").on(
+      table.organizationId,
+      table.firewallInstanceId,
+      table.routeTemplate,
+    ),
+    index("api_inventory_org_status_idx").on(table.organizationId, table.status),
+    index("api_inventory_firewall_seen_idx").on(table.firewallInstanceId, table.lastSeenAt),
+    foreignKey({
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+      name: "api_inventory_routes_org_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+      name: "api_inventory_routes_fw_id_fk",
+    }).onDelete("cascade"),
+    check(
+      "api_inventory_status_check",
+      sql`${table.status} in ('new', 'known', 'approved', 'deprecated', 'unknown')`,
+    ),
+  ],
+);
+
+export const firewallPolicyVersions = pgTable(
+  "firewall_policy_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id").notNull(),
+    version: integer("version").notNull(),
+    previousVersion: integer("previous_version"),
+    policyMode: varchar("policy_mode", { length: 32 }).notNull().default("balanced"),
+    digestSha256: varchar("digest_sha256", { length: 64 }),
+    detectorExceptions: jsonb("detector_exceptions").notNull().default(sql`'[]'::jsonb`),
+    policySnapshot: jsonb("policy_snapshot").notNull().default(sql`'{}'::jsonb`),
+    createdBy: varchar("created_by", { length: 160 }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("firewall_policy_versions_unique_idx").on(
+      table.organizationId,
+      table.firewallInstanceId,
+      table.version,
+    ),
+    index("firewall_policy_versions_firewall_idx").on(table.firewallInstanceId, table.createdAt),
+    foreignKey({
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+      name: "firewall_policy_versions_org_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+      name: "firewall_policy_versions_fw_id_fk",
+    }).onDelete("cascade"),
+    check(
+      "firewall_policy_versions_mode_check",
+      sql`${table.policyMode} in ('monitor', 'balanced', 'strict')`,
+    ),
   ],
 );
 

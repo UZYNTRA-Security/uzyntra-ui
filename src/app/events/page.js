@@ -14,6 +14,8 @@ const defaultFilters = {
   actionTaken: "",
   severity: "",
   method: "",
+  detectorId: "",
+  anomalyType: "",
   path_contains: "",
   limit: DEFAULT_LIMIT,
   cursor: "",
@@ -164,6 +166,18 @@ export default function EventsPage() {
             onChange={(event) => updateFilter("path_contains", event.target.value)}
             placeholder="/api/orders"
           />
+          <Field
+            label="Detector ID"
+            value={filters.detectorId}
+            onChange={(event) => updateFilter("detectorId", event.target.value)}
+            placeholder="uz-sqli-001"
+          />
+          <Field
+            label="Anomaly type"
+            value={filters.anomalyType}
+            onChange={(event) => updateFilter("anomalyType", event.target.value)}
+            placeholder="schema"
+          />
           <SelectField
             label="Page size"
             value={filters.limit}
@@ -196,6 +210,8 @@ export default function EventsPage() {
                   <th className="px-3 py-3 font-medium">Source IP</th>
                   <th className="px-3 py-3 font-medium">Method</th>
                   <th className="px-3 py-3 font-medium">Path</th>
+                  <th className="px-3 py-3 font-medium">Detector</th>
+                  <th className="px-3 py-3 font-medium">Score</th>
                   <th className="px-3 py-3 font-medium">Attack</th>
                   <th className="px-3 py-3 font-medium">Severity</th>
                   <th className="px-3 py-3 font-medium">Action</th>
@@ -204,7 +220,7 @@ export default function EventsPage() {
               <tbody>
                 {tableRows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
+                    <td colSpan={9} className="px-3 py-8 text-center text-slate-500">
                       No events found
                     </td>
                   </tr>
@@ -224,6 +240,10 @@ export default function EventsPage() {
                         <td className="px-3 py-3">{row.sourceIp || "-"}</td>
                         <td className="px-3 py-3">{row.httpMethod || "-"}</td>
                         <td className="px-3 py-3">{row.requestPath || "-"}</td>
+                        <td className="px-3 py-3">{row.detectorId || "-"}</td>
+                        <td className="px-3 py-3">
+                          {row.score == null ? "-" : Number(row.score).toFixed(1)}
+                        </td>
                         <td className="px-3 py-3">{row.attackType || "-"}</td>
                         <td className="px-3 py-3">
                           {row.severity ? (
@@ -267,8 +287,15 @@ export default function EventsPage() {
               <DetailItem label="Source IP" value={selected.sourceIp} />
               <DetailItem label="Method" value={selected.httpMethod} />
               <DetailItem label="Path" value={selected.requestPath} />
+              <DetailItem label="API Route" value={selected.apiRouteId} />
+              <DetailItem label="Detector ID" value={selected.detectorId} />
+              <DetailItem label="Anomaly Type" value={selected.anomalyType} />
               <DetailItem label="Attack Type" value={selected.attackType} />
               <DetailItem label="Action" value={selected.actionTaken} />
+              <DetailItem
+                label="Score"
+                value={selected.score == null ? "-" : Number(selected.score).toFixed(1)}
+              />
               <DetailItem
                 label="Confidence"
                 value={

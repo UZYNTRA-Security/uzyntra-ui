@@ -41,6 +41,8 @@ export const api = {
     request(`/api/security-events/analytics${qs(params)}`),
   getSecurityEvents: (params = {}) =>
     request(`/api/security-events${qs(params)}`),
+  getApiInventory: (params = {}) =>
+    request(`/api/api-inventory${qs(params)}`),
   getEvents: (limit = 10, offset = 0) =>
     request(`/api/admin/events/recent?limit=${limit}&offset=${offset}`),
   searchEvents: (params = {}) =>

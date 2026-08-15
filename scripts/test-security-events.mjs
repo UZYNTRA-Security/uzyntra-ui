@@ -21,6 +21,11 @@ const baseEvent = {
   userAgent: "curl/8.0",
   country: "us",
   confidence: 0.94,
+  detectorId: "UZ-SQLI-001",
+  detectorIds: ["UZ-SQLI-001", "UZ-EVASION-001"],
+  score: 72.4,
+  apiRouteId: "/api/{id}",
+  anomalyType: "injection",
   actionTaken: SECURITY_EVENT_ACTIONS.BLOCKED,
   requestId: "request-1",
   rawMetadata: {
@@ -33,6 +38,9 @@ const baseEvent = {
 const normalized = normalizeSecurityEvent(baseEvent);
 assert.equal(normalized.httpMethod, "POST");
 assert.equal(normalized.country, "US");
+assert.equal(normalized.detectorId, "uz-sqli-001");
+assert.equal(normalized.detectorIds.length, 2);
+assert.equal(normalized.score, 72.4);
 assert.equal(normalized.occurredAt instanceof Date, true);
 assert.equal(validateSecurityEvent(normalized), true);
 
@@ -55,7 +63,8 @@ assert.equal(created.organizationId, "org-1");
 assert.equal(created.firewallInstanceId, "firewall-1");
 assert.equal(created.severity, "high");
 assert.equal(created.actionTaken, "blocked");
-assert.equal(writes.length, 1);
+assert.equal(writes.length, 2);
+assert.ok(writes.find((write) => write.routeTemplate === "/api/{id}"));
 assert.equal(JSON.stringify(writes[0]).includes("AUTH_API_KEY_SECRET"), false);
 
 await assert.rejects(

@@ -18,6 +18,15 @@ export const ADMIN_ROUTE_PERMISSIONS = Object.freeze([
   adminRoute("POST", /^policy\/routes\/delete$/, PERMISSIONS.POLICY_UPDATE),
   adminRoute("POST", /^policy\/rate-limits\/upsert$/, PERMISSIONS.POLICY_UPDATE),
   adminRoute("POST", /^policy\/rate-limits\/delete$/, PERMISSIONS.POLICY_UPDATE),
+  adminRoute("GET", /^policy\/export$/, PERMISSIONS.POLICY_READ),
+  adminRoute("POST", /^policy\/import$/, PERMISSIONS.POLICY_UPDATE),
+  adminRoute("GET", /^policy\/bundles$/, PERMISSIONS.POLICY_READ),
+  adminRoute("POST", /^policy\/bundles\/save$/, PERMISSIONS.POLICY_UPDATE),
+  adminRoute("POST", /^policy\/bundles\/restore$/, PERMISSIONS.POLICY_UPDATE),
+  adminRoute("GET", /^policy\/diff\/latest$/, PERMISSIONS.POLICY_READ),
+  adminRoute("GET", /^policy\/route-behavior-overrides$/, PERMISSIONS.POLICY_READ),
+  adminRoute("POST", /^policy\/route-behavior-overrides\/upsert$/, PERMISSIONS.POLICY_UPDATE),
+  adminRoute("POST", /^policy\/route-behavior-overrides\/delete$/, PERMISSIONS.POLICY_UPDATE),
 ]);
 
 export function requiredPermissionForAdminRoute(method, pathKey) {

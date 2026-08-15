@@ -42,6 +42,23 @@ const ROUTES = [
   route("POST", /^policy\/routes\/delete$/, "policy.routes.delete"),
   route("POST", /^policy\/rate-limits\/upsert$/, "policy.rate_limits.upsert"),
   route("POST", /^policy\/rate-limits\/delete$/, "policy.rate_limits.delete"),
+  route("GET", /^policy\/export$/, "policy.export"),
+  route("POST", /^policy\/import$/, "policy.import"),
+  route("GET", /^policy\/bundles$/, "policy.bundles"),
+  route("POST", /^policy\/bundles\/save$/, "policy.bundles.save"),
+  route("POST", /^policy\/bundles\/restore$/, "policy.bundles.restore"),
+  route("GET", /^policy\/diff\/latest$/, "policy.diff.latest"),
+  route("GET", /^policy\/route-behavior-overrides$/, "policy.route_behavior_overrides"),
+  route(
+    "POST",
+    /^policy\/route-behavior-overrides\/upsert$/,
+    "policy.route_behavior_overrides.upsert",
+  ),
+  route(
+    "POST",
+    /^policy\/route-behavior-overrides\/delete$/,
+    "policy.route_behavior_overrides.delete",
+  ),
 ];
 
 export const dynamic = "force-dynamic";

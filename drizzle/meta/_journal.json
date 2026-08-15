@@ -71,6 +71,13 @@
       "when": 1786668308521,
       "tag": "0009_multi_tenant_saas_management",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786723200000,
+      "tag": "0010_api_detection_engine_evolution",
+      "breakpoints": true
     }
   ]
 }

@@ -54,6 +54,12 @@ assert.equal(disabledUser, null);
 assert.equal(requiredPermissionForAdminRoute("GET", "metrics"), PERMISSIONS.METRICS_READ);
 assert.equal(requiredPermissionForAdminRoute("GET", "events/recent"), PERMISSIONS.EVENTS_READ);
 assert.equal(requiredPermissionForAdminRoute("POST", "policy/rules/set"), PERMISSIONS.POLICY_UPDATE);
+assert.equal(requiredPermissionForAdminRoute("GET", "policy/export"), PERMISSIONS.POLICY_READ);
+assert.equal(requiredPermissionForAdminRoute("POST", "policy/import"), PERMISSIONS.POLICY_UPDATE);
+assert.equal(
+  requiredPermissionForAdminRoute("POST", "policy/bundles/restore"),
+  PERMISSIONS.POLICY_UPDATE,
+);
 assert.equal(
   requiredPermissionForAdminRoute("POST", "mitigations/unblock/127.0.0.1"),
   PERMISSIONS.MITIGATION_DELETE,

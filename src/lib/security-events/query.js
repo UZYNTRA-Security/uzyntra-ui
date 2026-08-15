@@ -132,6 +132,9 @@ export function normalizeSecurityEventQuery(filters = {}) {
     requestPath: nullableCleanString(filters.requestPath || filters.path_contains, 2048),
     httpMethod: nullableHttpMethod(filters.httpMethod || filters.method),
     firewallInstanceId: nullableBoundedString(filters.firewallInstanceId, 160),
+    detectorId: nullableToken(filters.detectorId || filters.detector_id, 80),
+    apiRouteId: nullableCleanString(filters.apiRouteId || filters.api_route_id, 2048),
+    anomalyType: nullableToken(filters.anomalyType || filters.anomaly_type, 80),
     since,
     until,
   };
@@ -193,6 +196,11 @@ function securityEventProjection() {
     userAgent: securityEvents.userAgent,
     country: securityEvents.country,
     confidence: securityEvents.confidence,
+    detectorId: securityEvents.detectorId,
+    detectorIds: securityEvents.detectorIds,
+    score: securityEvents.score,
+    apiRouteId: securityEvents.apiRouteId,
+    anomalyType: securityEvents.anomalyType,
     actionTaken: securityEvents.actionTaken,
     requestId: securityEvents.requestId,
     rawMetadata: securityEvents.rawMetadata,
@@ -230,6 +238,18 @@ function buildSecurityEventPredicates({ organizationId, query }) {
 
   if (query.httpMethod) {
     predicates.push(eq(securityEvents.httpMethod, query.httpMethod));
+  }
+
+  if (query.detectorId) {
+    predicates.push(eq(securityEvents.detectorId, query.detectorId));
+  }
+
+  if (query.apiRouteId) {
+    predicates.push(ilike(securityEvents.apiRouteId, `%${query.apiRouteId}%`));
+  }
+
+  if (query.anomalyType) {
+    predicates.push(eq(securityEvents.anomalyType, query.anomalyType));
   }
 
   if (query.since) {
