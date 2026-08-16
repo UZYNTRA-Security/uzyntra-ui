@@ -55,6 +55,21 @@ export const AUDIT_EVENT_TYPES = Object.freeze({
   SECURITY_EVENT_INGESTED: "security_event.ingested",
   SECURITY_EVENT_INGESTION_FAILED: "security_event.ingestion_failed",
   FIREWALL_UPDATED: "firewall.updated",
+  ALERT_RULE_CREATED: "alert_rule.created",
+  ALERT_RULE_UPDATED: "alert_rule.updated",
+  ALERT_RULE_ENABLED: "alert_rule.enabled",
+  ALERT_RULE_DISABLED: "alert_rule.disabled",
+  ALERT_ACKNOWLEDGED: "alert.acknowledged",
+  ALERT_RESOLVED: "alert.resolved",
+  ALERT_SUPPRESSED: "alert.suppressed",
+  INCIDENT_CREATED: "incident.created",
+  INCIDENT_ASSIGNED: "incident.assigned",
+  INCIDENT_RESOLVED: "incident.resolved",
+  NOTIFICATION_CHANNEL_CREATED: "notification_channel.created",
+  NOTIFICATION_CHANNEL_UPDATED: "notification_channel.updated",
+  NOTIFICATION_CHANNEL_DISABLED: "notification_channel.disabled",
+  WEBHOOK_SECRET_ROTATED: "webhook.secret_rotated",
+  EXPORT_CREATED: "export.created",
 });
 
 export async function createAuditEvent({ database = db(), ...event } = {}) {

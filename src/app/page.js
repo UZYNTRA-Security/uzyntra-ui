@@ -31,9 +31,10 @@ export default function DashboardPage() {
           api.getMitigations(),
           api.getAudits(5, 0),
         ]);
+      const alertRes = await api.getAlertAnalytics().catch(() => ({ data: null }));
 
       setMetrics(metricsRes.data);
-      setAnalytics(analyticsRes.data);
+      setAnalytics({ ...analyticsRes.data, alerts: alertRes.data });
       setEvents(eventsRes.data?.items || []);
       setMitigations(mitigationsRes.data?.items || []);
       setAudits(auditsRes.data?.items || []);
@@ -144,6 +145,21 @@ export default function DashboardPage() {
           title="Blocked Events"
           value={analytics?.totals?.blocked ?? (loading ? "..." : 0)}
           hint="Blocked control-plane telemetry events"
+        />
+        <MetricCard
+          title="Open Alerts"
+          value={analytics?.alerts?.totals?.open ?? (loading ? "..." : 0)}
+          hint="Actionable alert backlog"
+        />
+        <MetricCard
+          title="Critical Alerts"
+          value={analytics?.alerts?.totals?.criticalOpen ?? (loading ? "..." : 0)}
+          hint="Open critical alert conditions"
+        />
+        <MetricCard
+          title="Active Incidents"
+          value={analytics?.alerts?.totals?.activeIncidents ?? (loading ? "..." : 0)}
+          hint="Unresolved incident groups"
         />
       </div>
 

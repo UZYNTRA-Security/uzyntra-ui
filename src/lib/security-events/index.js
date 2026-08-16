@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { firewallInstances, securityEvents } from "../../db/schema.js";
+import { evaluateAlertRulesForEvent } from "../alerts/index.js";
 import { upsertApiInventoryFromSecurityEvent } from "../api-inventory/index.js";
 
 export const SECURITY_EVENT_TYPES = Object.freeze({
@@ -54,6 +55,11 @@ export async function createSecurityEvent({ database = db(), ...event } = {}) {
 
   const [created] = await database.insert(securityEvents).values(values).returning();
   await upsertApiInventoryFromSecurityEvent({ database, event: created });
+  try {
+    await evaluateAlertRulesForEvent({ database, event: created });
+  } catch (error) {
+    console.error("Alert evaluation failed after security event ingestion", error);
+  }
   return created;
 }
 

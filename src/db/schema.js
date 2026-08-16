@@ -43,6 +43,21 @@ const securityEventSeverityCheck = (name, table) =>
 const securityEventActionCheck = (name, table) =>
   check(name, sql`${table.actionTaken} in ('blocked', 'allowed', 'rate_limited', 'challenged')`);
 
+const alertRuleStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'disabled', 'deleted')`);
+
+const alertStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('open', 'acknowledged', 'resolved', 'suppressed')`);
+
+const incidentStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('open', 'investigating', 'contained', 'resolved')`);
+
+const notificationChannelStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'disabled', 'deleted')`);
+
+const deliveryStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'claimed', 'delivered', 'retry', 'failed', 'blocked')`);
+
 export const organizations = pgTable(
   "organizations",
   {
@@ -746,5 +761,387 @@ export const firewallInstanceServiceAccountRoleAssignments = pgTable(
       table.serviceAccountId,
     ),
     index("firewall_instance_service_account_roles_role_id_idx").on(table.roleId),
+  ],
+);
+
+export const alertRules = pgTable(
+  "alert_rules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id"),
+    name: varchar("name", { length: 160 }).notNull(),
+    description: text("description"),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    severityThreshold: varchar("severity_threshold", { length: 32 }).notNull().default("high"),
+    confidenceThreshold: real("confidence_threshold"),
+    scoreThreshold: real("score_threshold"),
+    detectorIds: text("detector_ids")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    attackTypes: text("attack_types")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    anomalyTypes: text("anomaly_types")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    actions: text("actions")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    routePatterns: text("route_patterns")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    aggregationWindowSeconds: integer("aggregation_window_seconds").notNull().default(300),
+    thresholdCount: integer("threshold_count").notNull().default(1),
+    cooldownSeconds: integer("cooldown_seconds").notNull().default(300),
+    autoCreateIncident: boolean("auto_create_incident").notNull().default(false),
+    createdByUserId: uuid("created_by_user_id"),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("alert_rules_org_status_idx").on(table.organizationId, table.status),
+    index("alert_rules_firewall_idx").on(table.firewallInstanceId),
+    foreignKey({
+      name: "alert_rules_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alert_rules_firewall_fk",
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alert_rules_created_by_fk",
+      columns: [table.createdByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    alertRuleStatusCheck("alert_rules_status_chk", table),
+    check(
+      "alert_rules_severity_chk",
+      sql`${table.severityThreshold} in ('low', 'medium', 'high', 'critical')`,
+    ),
+    check("alert_rules_confidence_chk", sql`${table.confidenceThreshold} is null or ${table.confidenceThreshold} between 0 and 1`),
+    check("alert_rules_score_chk", sql`${table.scoreThreshold} is null or ${table.scoreThreshold} between 0 and 100`),
+    check("alert_rules_threshold_chk", sql`${table.thresholdCount} between 1 and 1000`),
+    check("alert_rules_window_chk", sql`${table.aggregationWindowSeconds} between 30 and 86400`),
+    check("alert_rules_cooldown_chk", sql`${table.cooldownSeconds} between 0 and 86400`),
+  ],
+);
+
+export const alertSuppressions = pgTable(
+  "alert_suppressions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id"),
+    alertRuleId: uuid("alert_rule_id"),
+    scopeType: varchar("scope_type", { length: 32 }).notNull(),
+    scopeValue: text("scope_value"),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    reason: text("reason").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id"),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("alert_suppressions_org_status_idx").on(table.organizationId, table.status),
+    index("alert_suppressions_scope_idx").on(table.organizationId, table.scopeType),
+    foreignKey({
+      name: "alert_suppressions_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alert_suppressions_firewall_fk",
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alert_suppressions_rule_fk",
+      columns: [table.alertRuleId],
+      foreignColumns: [alertRules.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alert_suppressions_created_by_fk",
+      columns: [table.createdByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    check("alert_suppressions_status_chk", sql`${table.status} in ('active', 'expired', 'deleted')`),
+    check("alert_suppressions_scope_chk", sql`${table.scopeType} in ('rule', 'detector', 'firewall', 'route', 'source_ip')`),
+  ],
+);
+
+export const alerts = pgTable(
+  "alerts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id").notNull(),
+    alertRuleId: uuid("alert_rule_id"),
+    incidentId: uuid("incident_id"),
+    dedupeFingerprint: varchar("dedupe_fingerprint", { length: 64 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("open"),
+    severity: varchar("severity", { length: 32 }).notNull(),
+    title: varchar("title", { length: 240 }).notNull(),
+    summary: text("summary").notNull(),
+    detectorId: varchar("detector_id", { length: 80 }),
+    attackType: varchar("attack_type", { length: 80 }),
+    anomalyType: varchar("anomaly_type", { length: 80 }),
+    sourceIp: varchar("source_ip", { length: 45 }),
+    route: text("route"),
+    eventCount: integer("event_count").notNull().default(1),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+    lastNotifiedAt: timestamp("last_notified_at", { withTimezone: true }),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+    acknowledgedByUserId: uuid("acknowledged_by_user_id"),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedByUserId: uuid("resolved_by_user_id"),
+    resolutionNote: text("resolution_note"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("alerts_open_dedupe_idx")
+      .on(table.organizationId, table.dedupeFingerprint)
+      .where(sql`status in ('open', 'acknowledged')`),
+    index("alerts_org_status_time_idx").on(table.organizationId, table.status, table.lastSeenAt),
+    index("alerts_firewall_time_idx").on(table.firewallInstanceId, table.lastSeenAt),
+    index("alerts_rule_time_idx").on(table.alertRuleId, table.lastSeenAt),
+    foreignKey({
+      name: "alerts_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alerts_firewall_fk",
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "alerts_rule_fk",
+      columns: [table.alertRuleId],
+      foreignColumns: [alertRules.id],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "alerts_ack_user_fk",
+      columns: [table.acknowledgedByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "alerts_res_user_fk",
+      columns: [table.resolvedByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    alertStatusCheck("alerts_status_chk", table),
+    securityEventSeverityCheck("alerts_severity_chk", table),
+    check("alerts_event_count_chk", sql`${table.eventCount} >= 1`),
+  ],
+);
+
+export const incidents = pgTable(
+  "incidents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    firewallInstanceId: uuid("firewall_instance_id"),
+    title: varchar("title", { length: 240 }).notNull(),
+    summary: text("summary"),
+    severity: varchar("severity", { length: 32 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("open"),
+    assignedToUserId: uuid("assigned_to_user_id"),
+    createdByUserId: uuid("created_by_user_id"),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull(),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolution: text("resolution"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    index("incidents_org_status_time_idx").on(table.organizationId, table.status, table.lastSeenAt),
+    index("incidents_firewall_time_idx").on(table.firewallInstanceId, table.lastSeenAt),
+    foreignKey({
+      name: "incidents_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "incidents_firewall_fk",
+      columns: [table.firewallInstanceId],
+      foreignColumns: [firewallInstances.id],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "incidents_assigned_user_fk",
+      columns: [table.assignedToUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "incidents_created_by_fk",
+      columns: [table.createdByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    incidentStatusCheck("incidents_status_chk", table),
+    securityEventSeverityCheck("incidents_severity_chk", table),
+  ],
+);
+
+export const incidentAlerts = pgTable(
+  "incident_alerts",
+  {
+    incidentId: uuid("incident_id").notNull(),
+    alertId: uuid("alert_id").notNull(),
+    linkedByUserId: uuid("linked_by_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ name: "incident_alerts_pk", columns: [table.incidentId, table.alertId] }),
+    index("incident_alerts_alert_idx").on(table.alertId),
+    foreignKey({
+      name: "incident_alerts_incident_fk",
+      columns: [table.incidentId],
+      foreignColumns: [incidents.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "incident_alerts_alert_fk",
+      columns: [table.alertId],
+      foreignColumns: [alerts.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "incident_alerts_linked_by_fk",
+      columns: [table.linkedByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+  ],
+);
+
+export const notificationChannels = pgTable(
+  "notification_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    type: varchar("type", { length: 32 }).notNull(),
+    name: varchar("name", { length: 160 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    configuration: jsonb("configuration").notNull().default(sql`'{}'::jsonb`),
+    secretReference: jsonb("secret_reference").notNull().default(sql`'{}'::jsonb`),
+    selectedEvents: text("selected_events")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    createdByUserId: uuid("created_by_user_id"),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+    lastFailureAt: timestamp("last_failure_at", { withTimezone: true }),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("notification_channels_org_status_idx").on(table.organizationId, table.status),
+    foreignKey({
+      name: "notification_channels_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "notification_channels_created_by_fk",
+      columns: [table.createdByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    notificationChannelStatusCheck("notification_channels_status_chk", table),
+    check("notification_channels_type_chk", sql`${table.type} in ('webhook', 'email', 'siem')`),
+  ],
+);
+
+export const notificationDeliveries = pgTable(
+  "notification_deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    channelId: uuid("channel_id").notNull(),
+    alertId: uuid("alert_id"),
+    incidentId: uuid("incident_id"),
+    eventType: varchar("event_type", { length: 80 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    responseStatus: integer("response_status"),
+    lastErrorCode: varchar("last_error_code", { length: 80 }),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    index("notification_deliveries_pending_idx").on(table.status, table.nextAttemptAt),
+    index("notification_deliveries_org_time_idx").on(table.organizationId, table.createdAt),
+    index("notification_deliveries_channel_idx").on(table.channelId, table.createdAt),
+    foreignKey({
+      name: "notification_deliveries_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "notification_deliveries_channel_fk",
+      columns: [table.channelId],
+      foreignColumns: [notificationChannels.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "notification_deliveries_alert_fk",
+      columns: [table.alertId],
+      foreignColumns: [alerts.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "notification_deliveries_incident_fk",
+      columns: [table.incidentId],
+      foreignColumns: [incidents.id],
+    }).onDelete("cascade"),
+    deliveryStatusCheck("notification_deliveries_status_chk", table),
+    check("notification_deliveries_attempts_chk", sql`${table.attemptCount} >= 0 and ${table.maxAttempts} between 1 and 10`),
+  ],
+);
+
+export const scheduledReports = pgTable(
+  "scheduled_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").notNull(),
+    reportType: varchar("report_type", { length: 80 }).notNull(),
+    schedule: varchar("schedule", { length: 80 }).notNull(),
+    channelId: uuid("channel_id"),
+    status: varchar("status", { length: 32 }).notNull().default("disabled"),
+    lastRunAt: timestamp("last_run_at", { withTimezone: true }),
+    nextRunAt: timestamp("next_run_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id"),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("scheduled_reports_org_status_idx").on(table.organizationId, table.status),
+    foreignKey({
+      name: "scheduled_reports_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organizations.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "scheduled_reports_channel_fk",
+      columns: [table.channelId],
+      foreignColumns: [notificationChannels.id],
+    }).onDelete("set null"),
+    foreignKey({
+      name: "scheduled_reports_created_by_fk",
+      columns: [table.createdByUserId],
+      foreignColumns: [users.id],
+    }).onDelete("set null"),
+    check("scheduled_reports_status_chk", sql`${table.status} in ('active', 'disabled', 'deleted')`),
   ],
 );

@@ -7,6 +7,10 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/", label: "Dashboard" },
   { href: "/events", label: "Events" },
+  { href: "/alerts", label: "Alerts" },
+  { href: "/alert-rules", label: "Alert Rules" },
+  { href: "/incidents", label: "Incidents" },
+  { href: "/integrations", label: "Integrations" },
   { href: "/api-inventory", label: "API Inventory" },
   { href: "/mitigations", label: "Mitigations" },
   { href: "/reputation", label: "Reputation" },

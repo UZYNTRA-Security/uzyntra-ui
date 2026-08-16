@@ -41,6 +41,48 @@ export const api = {
     request(`/api/security-events/analytics${qs(params)}`),
   getSecurityEvents: (params = {}) =>
     request(`/api/security-events${qs(params)}`),
+  getAlerts: (params = {}) => request(`/api/alerts${qs(params)}`),
+  getAlertAnalytics: () => request("/api/alerts/analytics"),
+  acknowledgeAlert: (alertId, note = "") =>
+    request(`/api/alerts/${alertId}/acknowledge`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    }),
+  resolveAlert: (alertId, note = "") =>
+    request(`/api/alerts/${alertId}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ note }),
+    }),
+  getAlertRules: (params = {}) => request(`/api/alert-rules${qs(params)}`),
+  createAlertRule: (rule) =>
+    request("/api/alert-rules", {
+      method: "POST",
+      body: JSON.stringify(rule),
+    }),
+  updateAlertRule: (ruleId, rule) =>
+    request(`/api/alert-rules/${ruleId}`, {
+      method: "PATCH",
+      body: JSON.stringify(rule),
+    }),
+  deleteAlertRule: (ruleId) =>
+    request(`/api/alert-rules/${ruleId}`, { method: "DELETE" }),
+  getIncidents: (params = {}) => request(`/api/incidents${qs(params)}`),
+  createIncident: ({ alertIds, title, summary }) =>
+    request("/api/incidents", {
+      method: "POST",
+      body: JSON.stringify({ alertIds, title, summary }),
+    }),
+  updateIncident: (incidentId, patch) =>
+    request(`/api/incidents/${incidentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  getNotificationChannels: () => request("/api/notification-channels"),
+  createNotificationChannel: (channel) =>
+    request("/api/notification-channels", {
+      method: "POST",
+      body: JSON.stringify(channel),
+    }),
   getApiInventory: (params = {}) =>
     request(`/api/api-inventory${qs(params)}`),
   getEvents: (limit = 10, offset = 0) =>

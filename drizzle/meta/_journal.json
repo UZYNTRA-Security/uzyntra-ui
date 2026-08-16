@@ -78,6 +78,13 @@
       "when": 1786723200000,
       "tag": "0010_api_detection_engine_evolution",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786838400000,
+      "tag": "0011_alerts_integrations",
+      "breakpoints": true
     }
   ]
 }

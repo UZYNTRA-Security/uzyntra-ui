@@ -21,6 +21,11 @@ export const PERMISSIONS = Object.freeze({
   BILLING_MANAGE: "billing.manage",
   FIREWALLS_MANAGE: "firewalls.manage",
   SECURITY_EVENTS_INGEST: "security_events.ingest",
+  ALERTS_READ: "alerts.read",
+  ALERTS_MANAGE: "alerts.manage",
+  INCIDENTS_READ: "incidents.read",
+  INCIDENTS_MANAGE: "incidents.manage",
+  INTEGRATIONS_MANAGE: "integrations.manage",
 });
 
 export const PERMISSION_CATALOG = Object.freeze([
@@ -44,6 +49,11 @@ export const PERMISSION_CATALOG = Object.freeze([
   permission(PERMISSIONS.BILLING_MANAGE, "Manage billing settings"),
   permission(PERMISSIONS.FIREWALLS_MANAGE, "Manage firewall instances"),
   permission(PERMISSIONS.SECURITY_EVENTS_INGEST, "Ingest security telemetry"),
+  permission(PERMISSIONS.ALERTS_READ, "Read alerts and alert analytics"),
+  permission(PERMISSIONS.ALERTS_MANAGE, "Manage alert rules and alert state"),
+  permission(PERMISSIONS.INCIDENTS_READ, "Read security incidents"),
+  permission(PERMISSIONS.INCIDENTS_MANAGE, "Manage security incident lifecycle"),
+  permission(PERMISSIONS.INTEGRATIONS_MANAGE, "Manage notification and integration channels"),
 ]);
 
 export const DEFAULT_ROLES = Object.freeze([
@@ -63,16 +73,25 @@ export const DEFAULT_ROLES = Object.freeze([
     PERMISSIONS.FIREWALLS_MANAGE,
     PERMISSIONS.API_KEYS_MANAGE,
     PERMISSIONS.SERVICE_ACCOUNTS_MANAGE,
+    PERMISSIONS.ALERTS_READ,
+    PERMISSIONS.ALERTS_MANAGE,
+    PERMISSIONS.INCIDENTS_READ,
+    PERMISSIONS.INCIDENTS_MANAGE,
+    PERMISSIONS.INTEGRATIONS_MANAGE,
   ]),
   role("Analyst", "Investigate activity and review reputation", [
     PERMISSIONS.EVENTS_READ,
     PERMISSIONS.METRICS_READ,
     PERMISSIONS.AUDITS_READ,
     PERMISSIONS.REPUTATION_READ,
+    PERMISSIONS.ALERTS_READ,
+    PERMISSIONS.INCIDENTS_READ,
+    PERMISSIONS.INCIDENTS_MANAGE,
   ]),
   role("Viewer", "Read basic security telemetry", [
     PERMISSIONS.EVENTS_READ,
     PERMISSIONS.METRICS_READ,
+    PERMISSIONS.ALERTS_READ,
   ]),
 ]);
 
