@@ -1,4 +1,5 @@
 import { db } from "../../../../db/client.js";
+import { verifyServiceRequest } from "../../../../lib/service-auth.js";
 import { enrollFirewall } from "../../../../lib/management/firewalls.js";
 import { json, jsonError, readJson } from "../../../../lib/management/api.js";
 
@@ -6,6 +7,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request) {
+  if (!verifyServiceRequest(request.headers)) {
+    return jsonError("Unauthorized", 401);
+  }
+
   const database = db();
   const body = await readJson(request);
   if (body.error) return body.error;

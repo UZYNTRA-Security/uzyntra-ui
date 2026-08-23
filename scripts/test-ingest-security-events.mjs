@@ -3,6 +3,7 @@ import { API_KEY_STATUSES, hashApiKey } from "../src/lib/api-keys/index.js";
 import { handleSecurityEventIngestion } from "../src/app/api/ingest/security-events/route.js";
 
 process.env.AUTH_API_KEY_SECRET = "0123456789abcdef0123456789abcdef";
+process.env.CONTROL_PLANE_SERVICE_TOKEN = "staging-service-token-0123456789";
 
 const plaintextKey =
   "uz_live_0123456789ab_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -51,6 +52,12 @@ const validPayload = {
   rawMetadata: { ruleIds: ["sql.union.select"] },
   occurredAt: "2026-08-12T12:00:00.000Z",
 };
+
+const missingServiceTokenResponse = await handleSecurityEventIngestion({
+  request: requestWithJson(validPayload, plaintextKey, { serviceToken: null }),
+  database: fakeDatabase(),
+});
+assert.equal(missingServiceTokenResponse.status, 401);
 
 const validWrites = [];
 const validResponse = await handleSecurityEventIngestion({
@@ -118,15 +125,21 @@ assert.equal(secretMetadataResponse.status, 400);
 
 console.log("security event ingestion tests passed");
 
-function requestWithJson(payload, key) {
+function requestWithJson(payload, key, { serviceToken = process.env.CONTROL_PLANE_SERVICE_TOKEN } = {}) {
+  const headers = {
+    authorization: `Bearer ${key}`,
+    "content-type": "application/json",
+    "user-agent": "test-agent",
+    "x-forwarded-for": "198.51.100.10",
+  };
+
+  if (serviceToken) {
+    headers["x-uzyntra-service-token"] = serviceToken;
+  }
+
   return new Request("http://localhost/api/ingest/security-events", {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${key}`,
-      "content-type": "application/json",
-      "user-agent": "test-agent",
-      "x-forwarded-for": "198.51.100.10",
-    },
+    headers,
     body: JSON.stringify(payload),
   });
 }

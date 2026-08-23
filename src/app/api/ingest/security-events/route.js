@@ -6,6 +6,7 @@ import {
   createAuditEvent,
 } from "../../../../lib/audit/index.js";
 import { authenticateServiceAccountApiKey } from "../../../../lib/api-keys/index.js";
+import { verifyServiceRequest } from "../../../../lib/service-auth.js";
 import { createSecurityEvent } from "../../../../lib/security-events/index.js";
 
 const MAX_INGEST_BODY_BYTES = 256 * 1024;
@@ -21,6 +22,17 @@ export async function handleSecurityEventIngestion({ request, database = db() } 
   const requestId = crypto.randomUUID();
   const ipAddress = clientIp(request.headers);
   const agent = userAgent(request.headers);
+
+  if (!verifyServiceRequest(request.headers)) {
+    await recordIngestionAudit(database, {
+      result: AUDIT_RESULTS.FAILURE,
+      requestId,
+      ipAddress,
+      userAgent: agent,
+      reason: "invalid_service_token",
+    });
+    return jsonError("Unauthorized", 401);
+  }
 
   if (!isJsonRequest(request)) {
     await recordIngestionAudit(database, {
