@@ -1,19 +1,31 @@
 import { db } from "../../../../db/client.js";
 import { verifyServiceRequest } from "../../../../lib/service-auth.js";
 import { enrollFirewall } from "../../../../lib/management/firewalls.js";
+import {
+  enrollmentCredentialRejected,
+  parseEnrollmentBody,
+} from "../../../../lib/management/enrollment-contract.js";
 import { json, jsonError, readJson } from "../../../../lib/management/api.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request) {
+  return handleFirewallEnrollment({ request });
+}
+
+export async function handleFirewallEnrollment({ request, database = db(), enroll = enrollFirewall } = {}) {
   if (!verifyServiceRequest(request.headers)) {
     return jsonError("Unauthorized", 401);
   }
 
-  const database = db();
   const body = await readJson(request);
   if (body.error) return body.error;
+
+  const parsed = parseEnrollmentBody(body);
+  if (parsed.error) {
+    return jsonError(parsed.error, parsed.status);
+  }
 
   const auditContext = {
     requestId: crypto.randomUUID(),
@@ -22,9 +34,9 @@ export async function POST(request) {
   };
 
   try {
-    const enrolled = await enrollFirewall({
+    const enrolled = await enroll({
       database,
-      plaintextToken: body.data?.enrollmentToken,
+      plaintextToken: parsed.enrollmentToken,
       installationIdentifier: body.data?.installationIdentifier,
       hostname: body.data?.hostname,
       version: body.data?.version,
@@ -33,7 +45,10 @@ export async function POST(request) {
       auditContext,
     });
 
-    if (!enrolled) return jsonError("Invalid enrollment", 400);
+    if (!enrolled) {
+      const rejected = enrollmentCredentialRejected();
+      return jsonError(rejected.error, rejected.status);
+    }
 
     return json(
       {
@@ -49,7 +64,8 @@ export async function POST(request) {
     );
   } catch (error) {
     console.error("Firewall enrollment failed", error);
-    return jsonError("Invalid enrollment", 400);
+    const rejected = enrollmentCredentialRejected();
+    return jsonError(rejected.error, rejected.status);
   }
 }
 

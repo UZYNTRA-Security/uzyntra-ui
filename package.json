@@ -15,6 +15,7 @@
     "test:security-events": "node --conditions=react-server scripts/test-security-events.mjs",
     "test:security-event-query": "node --conditions=react-server scripts/test-security-event-query.mjs",
     "test:ingest": "node --conditions=react-server scripts/test-ingest-security-events.mjs",
+    "test:enrollment": "node --conditions=react-server scripts/test-firewall-enrollment.mjs",
     "test:phase5": "node --conditions=react-server scripts/test-phase5-detection.mjs",
     "test:phase6": "node --conditions=react-server scripts/test-phase6-alerts.mjs && node --conditions=react-server scripts/test-phase6-webhook-security.mjs && node --conditions=react-server scripts/test-phase6-crypto.mjs && node --conditions=react-server scripts/test-phase6-delivery.mjs && node --conditions=react-server scripts/test-phase6-rbac.mjs"
   },
