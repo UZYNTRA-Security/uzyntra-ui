@@ -85,6 +85,27 @@
       "when": 1786838400000,
       "tag": "0011_alerts_integrations",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787535214639,
+      "tag": "0012_funny_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787539938941,
+      "tag": "0013_exotic_puck",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787830422999,
+      "tag": "0014_magenta_kate_bishop",
+      "breakpoints": true
     }
   ]
 }

@@ -10,13 +10,19 @@ const empty = { name: "", url: "", signingSecret: "" };
 
 export default function IntegrationsPage() {
   const [rows, setRows] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
 
   async function load() {
     try {
-      const res = await api.getNotificationChannels();
+      setError("");
+      const [res, catalogRes] = await Promise.all([
+        api.getNotificationChannels(),
+        api.getIntegrationCatalog({ limit: 100 }),
+      ]);
       setRows(res.data?.items || []);
+      setCatalog(catalogRes.data?.items || []);
     } catch (err) {
       setError(err.message || "Failed to load integrations");
     }
@@ -69,6 +75,19 @@ export default function IntegrationsPage() {
       </SectionCard>
       <SectionCard title="Channels">
         <SimpleTable columns={columns} rows={rows} emptyText="No notification channels found" />
+      </SectionCard>
+      <SectionCard title="Integration Catalog">
+        <SimpleTable
+          columns={[
+            { key: "name", label: "Name" },
+            { key: "category", label: "Category" },
+            { key: "status", label: "Status" },
+            { key: "securityReviewStatus", label: "Review" },
+            { key: "version", label: "Version" },
+          ]}
+          rows={catalog}
+          emptyText="No integration catalog entries found"
+        />
       </SectionCard>
       <SectionCard title="Email and SIEM">
         <div className="text-sm text-slate-600">Prepared. Provider delivery workers are intentionally deferred.</div>

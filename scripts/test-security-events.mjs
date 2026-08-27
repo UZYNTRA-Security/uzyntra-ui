@@ -55,6 +55,7 @@ const created = await createSecurityEvent({
     },
     writes,
   }),
+  advancedDetection: false,
   ...baseEvent,
 });
 
@@ -78,6 +79,7 @@ await assert.rejects(
           deletedAt: null,
         },
       }),
+      advancedDetection: false,
       ...baseEvent,
     }),
   /firewall instance is not available/,

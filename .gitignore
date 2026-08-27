@@ -33,3 +33,5 @@ pnpm-debug.log*
 
 # coverage
 /coverage
+.vercel
+/supabase/.temp

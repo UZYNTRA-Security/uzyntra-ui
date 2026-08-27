@@ -4,6 +4,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { firewallInstances, securityEvents } from "../../db/schema.js";
 import { evaluateAlertRulesForEvent } from "../alerts/index.js";
+import { runAdvancedDetectionForEvent } from "../advanced-detection/index.js";
 import { upsertApiInventoryFromSecurityEvent } from "../api-inventory/index.js";
 
 export const SECURITY_EVENT_TYPES = Object.freeze({
@@ -48,13 +49,20 @@ export const SECURITY_EVENT_ACTIONS = Object.freeze({
   CHALLENGED: "challenged",
 });
 
-export async function createSecurityEvent({ database = db(), ...event } = {}) {
+export async function createSecurityEvent({ database = db(), advancedDetection = true, ...event } = {}) {
   const values = normalizeSecurityEvent(event);
   validateSecurityEvent(values);
   await validateFirewallOwnership(database, values.organizationId, values.firewallInstanceId);
 
   const [created] = await database.insert(securityEvents).values(values).returning();
   await upsertApiInventoryFromSecurityEvent({ database, event: created });
+  if (advancedDetection) {
+    try {
+      await runAdvancedDetectionForEvent({ database, event: created });
+    } catch (error) {
+      console.error("Advanced detection analysis failed after security event ingestion", error);
+    }
+  }
   try {
     await evaluateAlertRulesForEvent({ database, event: created });
   } catch (error) {
