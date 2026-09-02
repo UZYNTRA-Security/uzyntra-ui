@@ -376,4 +376,98 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(settings),
     }),
+  getIdentityProviders: () => request("/api/identity/providers"),
+  getIdentityStatus: () => request("/api/identity/status"),
+  getSsoProviders: () => request("/api/identity/sso/providers"),
+  createSsoProvider: (provider) =>
+    request("/api/identity/sso/providers", {
+      method: "POST",
+      body: JSON.stringify(provider),
+    }),
+  getScimProviders: () => request("/api/identity/scim"),
+  createScimProvider: (provider) =>
+    request("/api/identity/scim", {
+      method: "POST",
+      body: JSON.stringify(provider),
+    }),
+  generateScimToken: (input) =>
+    request("/api/identity/scim", {
+      method: "POST",
+      body: JSON.stringify({ ...input, generateToken: true }),
+    }),
+  getIdentitySecurityDashboard: () => request("/api/identity/security"),
+  getIdentitySecurityEvents: (params = {}) =>
+    request(`/api/identity/security/events${qs(params)}`),
+  getIdentityRiskScores: (params = {}) =>
+    request(`/api/identity/security/risk-scores${qs(params)}`),
+  createIdentityRiskScore: (input) =>
+    request("/api/identity/security/risk-scores", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getIdentityAccessReviews: (params = {}) =>
+    request(`/api/identity/access-reviews${qs(params)}`),
+  createIdentityAccessReview: (input) =>
+    request("/api/identity/access-reviews", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  completeIdentityAccessReview: (input) =>
+    request("/api/identity/access-reviews", {
+      method: "POST",
+      body: JSON.stringify({ ...input, completeReview: true }),
+    }),
+  getIdentityComplianceReports: (params = {}) =>
+    request(`/api/identity/compliance-reports${qs(params)}`),
+  createIdentityComplianceReport: (input) =>
+    request("/api/identity/compliance-reports", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getIdentityObservability: (params = {}) =>
+    request(`/api/identity/observability${qs(params)}`),
+  getIdentityMetrics: (params = {}) =>
+    request(`/api/identity/hardening/metrics${qs(params)}`),
+  recordIdentityMetric: (input) =>
+    request("/api/identity/hardening/metrics", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getIdentityAuditReports: (params = {}) =>
+    request(`/api/identity/audit-reports${qs(params)}`),
+  createIdentityAuditReport: (input) =>
+    request("/api/identity/audit-reports", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getIdentitySecurityReport: (params = {}) =>
+    request(`/api/identity/security-report${qs(params)}`),
+  generateIdentitySecurityReport: (params = {}) =>
+    request(`/api/identity/security-report${qs(params)}`, {
+      method: "POST",
+    }),
+  getIdentityRecoveryState: (params = {}) =>
+    request(`/api/identity/recovery${qs(params)}`),
+  createIdentityRecoveryWorkflow: (input) =>
+    request("/api/identity/recovery", {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  createBreakGlassAdministrator: (input) =>
+    request("/api/identity/recovery", {
+      method: "POST",
+      body: JSON.stringify({ ...input, breakGlassAdministrator: true }),
+    }),
+  getMfaMethods: () => request("/api/mfa/methods"),
+  enrollTotp: () => request("/api/mfa/totp/enroll", { method: "POST" }),
+  verifyTotp: ({ methodId, code }) =>
+    request("/api/mfa/totp/verify", { method: "POST", body: JSON.stringify({ methodId, code }) }),
+  generateRecoveryCodes: () => request("/api/mfa/recovery-codes", { method: "POST" }),
+  createWebAuthnChallenge: () => request("/api/mfa/webauthn/challenge", { method: "POST" }),
+  disableMfaMethod: (methodId) => request(`/api/mfa/methods/${methodId}`, { method: "DELETE" }),
+  verifyMfaLogin: ({ code, recoveryCode, methodId } = {}) =>
+    request("/api/auth/mfa/verify", {
+      method: "POST",
+      body: JSON.stringify({ code, recoveryCode, methodId }),
+    }),
 };

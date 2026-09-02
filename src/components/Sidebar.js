@@ -63,6 +63,12 @@ const links = [
   { href: "/service-accounts", label: "Service Accounts" },
   { href: "/api-keys", label: "API Keys" },
   { href: "/settings", label: "Settings" },
+  { href: "/settings/sso", label: "Enterprise SSO" },
+  { href: "/settings/scim", label: "SCIM" },
+  { href: "/security/mfa", label: "MFA" },
+  { href: "/identity-admin", label: "Identity Admin" },
+  { href: "/identity-security", label: "Identity Security" },
+  { href: "/identity-observability", label: "Identity Observability" },
 ];
 
 export default function Sidebar() {

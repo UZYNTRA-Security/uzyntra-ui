@@ -24,10 +24,14 @@ import {
 } from "../../../../lib/auth/api.js";
 import { verifyPassword } from "../../../../lib/auth/password.js";
 import {
-  createSession,
+  completePrimaryAuthentication,
+  mfaChallengeIdCookieName,
+  mfaChallengeTokenCookieName,
+  mfaCookieOptions,
+} from "../../../../lib/auth/mfa.js";
+import {
   sessionCookieName,
   sessionCookieOptions,
-  sessionExpiresAt,
 } from "../../../../lib/auth/session.js";
 
 const DUMMY_PASSWORD_HASH =
@@ -169,27 +173,59 @@ export async function POST(request) {
       return authError(AUTH_ERROR);
     }
 
-    const expiresAt = sessionExpiresAt(membership.settings?.sessionTimeoutSeconds, now);
-    const { token, session } = await database.transaction(async (tx) => {
+    const authResult = await database.transaction(async (tx) => {
       await tx
         .update(userCredentials)
         .set({ failedAttempts: 0, lockedUntil: null, updatedAt: now })
         .where(eq(userCredentials.id, credential.id));
       await tx.update(users).set({ lastLoginAt: now, updatedAt: now }).where(eq(users.id, user.id));
 
-      return createSession({
+      return completePrimaryAuthentication({
         database: tx,
         userId: user.id,
         organizationId: membership.organization.id,
-        expiresAt,
+        settings: membership.settings,
         ipAddress,
         userAgent: agent,
+        requestId: id,
         now,
       });
     });
 
     const cookieStore = await cookies();
-    cookieStore.set(sessionCookieName(), token, sessionCookieOptions(session.expiresAt));
+    if (authResult.mfaRequired) {
+      cookieStore.set(
+        mfaChallengeIdCookieName(),
+        authResult.challenge.id,
+        mfaCookieOptions(authResult.challenge.expiresAt),
+      );
+      cookieStore.set(
+        mfaChallengeTokenCookieName(),
+        authResult.challenge.token,
+        mfaCookieOptions(authResult.challenge.expiresAt),
+      );
+      recordAuthAuditEvent({
+        action: "login",
+        result: "success",
+        actorId: user.id,
+        email,
+        requestId: id,
+        ipAddress,
+        userAgent: agent,
+        reason: "mfa_required",
+      });
+      return authJson({
+        success: true,
+        mfaRequired: true,
+        methods: authResult.methods,
+      });
+    }
+
+    cookieStore.set(
+      sessionCookieName(),
+      authResult.token,
+      sessionCookieOptions(authResult.session.expiresAt),
+    );
     recordAuthAuditEvent({
       action: "login",
       result: "success",

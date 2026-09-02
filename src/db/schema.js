@@ -238,6 +238,120 @@ const webhookSubscriptionStatusCheck = (name, table) =>
 const marketplaceListingStatusCheck = (name, table) =>
   check(name, sql`${table.status} in ('draft', 'review', 'published', 'suspended', 'retired')`);
 
+const identityProviderTypeCheck = (name, table) =>
+  check(name, sql`${table.providerType} in ('password', 'google', 'github', 'oidc', 'saml')`);
+
+const identityProviderStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'disabled', 'deleted')`);
+
+const externalIdentityStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'unlinked', 'disabled', 'deleted')`);
+
+const emailIdentityStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'revoked', 'expired')`);
+
+const identityAuditResultCheck = (name, table) =>
+  check(name, sql`${table.result} in ('success', 'failure', 'denied', 'error')`);
+
+const oauthLoginAttemptStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'completed', 'failed', 'expired')`);
+
+const ssoLoginAttemptFlowCheck = (name, table) =>
+  check(name, sql`${table.flowType} in ('saml', 'oidc')`);
+
+const ssoLoginAttemptStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'completed', 'failed', 'expired')`);
+
+const ssoPolicyModeCheck = (name, table) =>
+  check(name, sql`${table.ssoMode} in ('optional', 'required', 'disabled')`);
+
+const scimProviderStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'disabled', 'deleted')`);
+
+const scimTokenStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'revoked', 'expired')`);
+
+const scimSyncOperationCheck = (name, table) =>
+  check(name, sql`${table.operationType} in ('user_create', 'user_update', 'user_deactivate', 'group_sync', 'full_sync')`);
+
+const scimSyncStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('queued', 'running', 'completed', 'failed', 'cancelled')`);
+
+const scimEventTypeCheck = (name, table) =>
+  check(name, sql`${table.eventType} in ('scim.user.created', 'scim.user.updated', 'scim.user.deactivated', 'scim.group.synced', 'scim.sync.started', 'scim.sync.completed', 'scim.sync.failed')`);
+
+const scimEventResultCheck = (name, table) =>
+  check(name, sql`${table.result} in ('success', 'failure', 'denied', 'error')`);
+
+const identitySecurityEventTypeCheck = (name, table) =>
+  check(name, sql`${table.eventType} in ('login.success', 'login.failure', 'mfa.failure', 'oauth.failure', 'sso.failure', 'scim.provisioning.failure', 'identity.change.suspicious', 'identity.risk.detected', 'identity.account.flagged')`);
+
+const identitySecurityCategoryCheck = (name, table) =>
+  check(name, sql`${table.category} in ('authentication', 'mfa', 'oauth', 'sso', 'scim', 'governance', 'risk')`);
+
+const identitySecurityActionCheck = (name, table) =>
+  check(name, sql`${table.action} in ('monitor', 'require_mfa', 'restrict_session', 'alert')`);
+
+const identityRiskSeverityCheck = (name, table) =>
+  check(name, sql`${table.severity} in ('low', 'medium', 'high', 'critical')`);
+
+const identityRiskStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'resolved', 'suppressed', 'expired')`);
+
+const identityAccessReviewTypeCheck = (name, table) =>
+  check(name, sql`${table.reviewType} in ('periodic', 'privileged', 'inactive_accounts', 'orphaned_identities')`);
+
+const identityAccessReviewStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('draft', 'open', 'in_review', 'completed', 'cancelled', 'expired')`);
+
+const identityComplianceReportTypeCheck = (name, table) =>
+  check(name, sql`${table.reportType} in ('user_inventory', 'mfa_status', 'privileged_access', 'sso_configuration', 'provisioning_history')`);
+
+const identityComplianceReportStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('draft', 'generated', 'review_required', 'published', 'archived')`);
+
+const identityMetricTypeCheck = (name, table) =>
+  check(name, sql`${table.metricType} in ('login_success_rate', 'login_failure_rate', 'mfa_success_rate', 'mfa_failure_rate', 'oauth_health', 'sso_health', 'scim_health', 'risky_identity_trend')`);
+
+const identityMetricStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('healthy', 'degraded', 'critical', 'unknown')`);
+
+const identityAuditReportTypeCheck = (name, table) =>
+  check(name, sql`${table.reportType} in ('administrator_activity', 'authentication_activity', 'provisioning_activity', 'access_review', 'identity_evidence')`);
+
+const identityAuditReportFormatCheck = (name, table) =>
+  check(name, sql`${table.exportFormat} in ('csv', 'json', 'evidence_timeline')`);
+
+const identityAuditReportStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('draft', 'generated', 'review_required', 'published', 'archived')`);
+
+const breakGlassAdminStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'disabled', 'expired', 'revoked')`);
+
+const identityRecoveryWorkflowTypeCheck = (name, table) =>
+  check(name, sql`${table.workflowType} in ('account_recovery', 'lockout_recovery', 'break_glass_activation', 'identity_disaster_recovery')`);
+
+const identityRecoveryWorkflowStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('draft', 'requested', 'approved', 'active', 'completed', 'rejected', 'expired', 'cancelled')`);
+
+const identityRecoveryEventTypeCheck = (name, table) =>
+  check(name, sql`${table.eventType} in ('recovery.requested', 'recovery.approved', 'recovery.completed', 'recovery.rejected', 'break_glass.created', 'break_glass.activated', 'break_glass.revoked', 'recovery.tested')`);
+
+const mfaMethodTypeCheck = (name, table) =>
+  check(name, sql`${table.methodType} in ('totp', 'webauthn', 'recovery_codes')`);
+
+const mfaMethodStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'active', 'disabled', 'deleted')`);
+
+const mfaChallengeTypeCheck = (name, table) =>
+  check(name, sql`${table.challengeType} in ('login', 'step_up', 'registration')`);
+
+const mfaChallengeStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('pending', 'succeeded', 'failed', 'expired')`);
+
+const recoveryCodeStatusCheck = (name, table) =>
+  check(name, sql`${table.status} in ('active', 'used', 'revoked')`);
+
 export const organizations = pgTable(
   "organizations",
   {
@@ -267,6 +381,13 @@ export const organizationSettings = pgTable(
       .array()
       .notNull()
       .default(sql`ARRAY[]::text[]`),
+    ssoMode: varchar("sso_mode", { length: 32 }).notNull().default("optional"),
+    ssoAllowedDomains: text("sso_allowed_domains")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    ssoPasswordLoginDisabled: boolean("sso_password_login_disabled").notNull().default(false),
+    ssoMfaRequired: boolean("sso_mfa_required").notNull().default(false),
     securityLevel: varchar("security_level", { length: 32 }).notNull().default("standard"),
     ...timestamps,
   },
@@ -280,6 +401,7 @@ export const organizationSettings = pgTable(
       "organization_settings_session_timeout_seconds_check",
       sql`${table.sessionTimeoutSeconds} between 300 and 2592000`,
     ),
+    ssoPolicyModeCheck("organization_settings_sso_mode_check", table),
   ],
 );
 
@@ -339,6 +461,294 @@ export const emailVerifications = pgTable(
     uniqueIndex("email_verifications_token_hash_idx").on(table.tokenHash),
     index("email_verifications_user_id_idx").on(table.userId),
     index("email_verifications_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+export const identityProviders = pgTable(
+  "identity_providers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").references(() => organizations.id, {
+      onDelete: "cascade",
+    }),
+    providerKey: varchar("provider_key", { length: 80 }).notNull(),
+    providerType: varchar("provider_type", { length: 32 }).notNull(),
+    displayName: varchar("display_name", { length: 160 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("disabled"),
+    issuer: varchar("issuer", { length: 255 }),
+    clientId: varchar("client_id", { length: 255 }),
+    scopes: text("scopes").array().notNull().default(sql`ARRAY[]::text[]`),
+    allowedDomains: text("allowed_domains")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    configurationRef: varchar("configuration_ref", { length: 160 }),
+    secretRef: varchar("secret_ref", { length: 160 }),
+    authorizationEndpoint: text("authorization_endpoint"),
+    tokenEndpoint: text("token_endpoint"),
+    userInfoEndpoint: text("user_info_endpoint"),
+    configuration: jsonb("configuration").notNull().default(sql`'{}'::jsonb`),
+    isSystem: boolean("is_system").notNull().default(false),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    uniqueIndex("identity_providers_org_key_idx").on(table.organizationId, table.providerKey),
+    uniqueIndex("identity_providers_global_key_idx")
+      .on(table.providerKey)
+      .where(sql`organization_id IS NULL`),
+    index("identity_providers_org_status_idx").on(table.organizationId, table.status),
+    index("identity_providers_type_status_idx").on(table.providerType, table.status),
+    index("identity_providers_org_type_idx").on(table.organizationId, table.providerType),
+    identityProviderTypeCheck("identity_providers_type_chk", table),
+    identityProviderStatusCheck("identity_providers_status_chk", table),
+  ],
+);
+
+export const oauthLoginAttempts = pgTable(
+  "oauth_login_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => identityProviders.id, { onDelete: "cascade" }),
+    stateHash: text("state_hash").notNull(),
+    pkceVerifierHash: text("pkce_verifier_hash").notNull(),
+    authorizationCodeHash: text("authorization_code_hash"),
+    redirectPath: varchar("redirect_path", { length: 255 }).notNull().default("/"),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    userAgent: text("user_agent"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("oauth_login_attempts_state_idx").on(table.stateHash),
+    uniqueIndex("oauth_login_attempts_code_idx")
+      .on(table.authorizationCodeHash)
+      .where(sql`authorization_code_hash IS NOT NULL`),
+    index("oauth_login_attempts_provider_status_idx").on(table.providerId, table.status),
+    index("oauth_login_attempts_expires_idx").on(table.expiresAt),
+    oauthLoginAttemptStatusCheck("oauth_login_attempts_status_chk", table),
+  ],
+);
+
+export const ssoLoginAttempts = pgTable(
+  "sso_login_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => identityProviders.id, { onDelete: "cascade" }),
+    flowType: varchar("flow_type", { length: 32 }).notNull(),
+    stateHash: text("state_hash").notNull(),
+    pkceVerifierHash: text("pkce_verifier_hash"),
+    assertionIdHash: text("assertion_id_hash"),
+    authorizationCodeHash: text("authorization_code_hash"),
+    redirectPath: varchar("redirect_path", { length: 255 }).notNull().default("/"),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    userAgent: text("user_agent"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("sso_login_attempts_state_idx").on(table.stateHash),
+    uniqueIndex("sso_login_attempts_assertion_idx")
+      .on(table.assertionIdHash)
+      .where(sql`assertion_id_hash IS NOT NULL`),
+    uniqueIndex("sso_login_attempts_code_idx")
+      .on(table.authorizationCodeHash)
+      .where(sql`authorization_code_hash IS NOT NULL`),
+    index("sso_login_attempts_org_provider_status_idx").on(
+      table.organizationId,
+      table.providerId,
+      table.status,
+    ),
+    index("sso_login_attempts_expires_idx").on(table.expiresAt),
+    ssoLoginAttemptFlowCheck("sso_login_attempts_flow_chk", table),
+    ssoLoginAttemptStatusCheck("sso_login_attempts_status_chk", table),
+  ],
+);
+
+export const externalIdentities = pgTable(
+  "external_identities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => identityProviders.id, { onDelete: "restrict" }),
+    externalSubjectHash: text("external_subject_hash").notNull(),
+    providerEmail: varchar("provider_email", { length: 320 }),
+    providerEmailHash: text("provider_email_hash"),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    linkedAt: timestamp("linked_at", { withTimezone: true }).notNull().defaultNow(),
+    unlinkedAt: timestamp("unlinked_at", { withTimezone: true }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    uniqueIndex("external_identities_provider_subject_idx").on(
+      table.providerId,
+      table.externalSubjectHash,
+    ),
+    index("external_identities_org_user_idx").on(table.organizationId, table.userId),
+    index("external_identities_org_provider_idx").on(table.organizationId, table.providerId),
+    index("external_identities_email_hash_idx").on(table.providerEmailHash),
+    externalIdentityStatusCheck("external_identities_status_chk", table),
+  ],
+);
+
+export const verifiedEmailIdentities = pgTable(
+  "verified_email_identities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    email: varchar("email", { length: 320 }).notNull(),
+    emailHash: text("email_hash").notNull(),
+    sourceProviderId: uuid("source_provider_id").references(() => identityProviders.id, {
+      onDelete: "set null",
+    }),
+    verificationSource: varchar("verification_source", { length: 32 }).notNull().default("password"),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("verified_email_identities_org_email_idx").on(
+      table.organizationId,
+      table.emailHash,
+    ),
+    index("verified_email_identities_user_idx").on(table.userId),
+    index("verified_email_identities_source_idx").on(table.sourceProviderId),
+    emailIdentityStatusCheck("verified_email_identities_status_chk", table),
+    check(
+      "verified_email_identities_source_chk",
+      sql`${table.verificationSource} in ('password', 'google', 'github', 'oidc', 'saml', 'manual')`,
+    ),
+  ],
+);
+
+export const mfaMethods = pgTable(
+  "mfa_methods",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    methodType: varchar("method_type", { length: 32 }).notNull(),
+    displayName: varchar("display_name", { length: 160 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    enabledAt: timestamp("enabled_at", { withTimezone: true }),
+    disabledAt: timestamp("disabled_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    secretCiphertext: jsonb("secret_ciphertext"),
+    credentialIdHash: text("credential_id_hash"),
+    publicKey: text("public_key"),
+    signCount: integer("sign_count").notNull().default(0),
+    deviceMetadata: jsonb("device_metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("mfa_methods_org_user_idx").on(table.organizationId, table.userId),
+    index("mfa_methods_user_status_idx").on(table.userId, table.status),
+    uniqueIndex("mfa_methods_credential_id_idx")
+      .on(table.credentialIdHash)
+      .where(sql`credential_id_hash IS NOT NULL`),
+    mfaMethodTypeCheck("mfa_methods_type_chk", table),
+    mfaMethodStatusCheck("mfa_methods_status_chk", table),
+    check("mfa_methods_sign_count_chk", sql`${table.signCount} >= 0`),
+  ],
+);
+
+export const mfaChallenges = pgTable(
+  "mfa_challenges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    methodId: uuid("method_id").references(() => mfaMethods.id, { onDelete: "set null" }),
+    challengeType: varchar("challenge_type", { length: 32 }).notNull().default("login"),
+    challengeHash: text("challenge_hash").notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    succeededAt: timestamp("succeeded_at", { withTimezone: true }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    userAgent: text("user_agent"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("mfa_challenges_hash_idx").on(table.challengeHash),
+    index("mfa_challenges_user_status_idx").on(table.userId, table.status),
+    index("mfa_challenges_org_status_idx").on(table.organizationId, table.status),
+    index("mfa_challenges_expires_idx").on(table.expiresAt),
+    mfaChallengeTypeCheck("mfa_challenges_type_chk", table),
+    mfaChallengeStatusCheck("mfa_challenges_status_chk", table),
+    check("mfa_challenges_attempt_count_chk", sql`${table.attemptCount} >= 0`),
+    check("mfa_challenges_max_attempts_chk", sql`${table.maxAttempts} between 1 and 10`),
+  ],
+);
+
+export const recoveryCodes = pgTable(
+  "recovery_codes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    methodId: uuid("method_id").references(() => mfaMethods.id, { onDelete: "cascade" }),
+    codeHash: text("code_hash").notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("recovery_codes_hash_idx").on(table.codeHash),
+    index("recovery_codes_user_status_idx").on(table.userId, table.status),
+    index("recovery_codes_org_user_idx").on(table.organizationId, table.userId),
+    recoveryCodeStatusCheck("recovery_codes_status_chk", table),
   ],
 );
 
@@ -467,6 +877,454 @@ export const userRoles = pgTable(
   (table) => [
     primaryKey({ columns: [table.membershipId, table.roleId] }),
     index("user_roles_role_id_idx").on(table.roleId),
+  ],
+);
+
+export const scimProviders = pgTable(
+  "scim_providers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 160 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("disabled"),
+    endpointConfigurationRef: varchar("endpoint_configuration_ref", { length: 160 }),
+    baseUrl: text("base_url"),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    uniqueIndex("scim_providers_org_name_idx").on(table.organizationId, table.name),
+    index("scim_providers_org_status_idx").on(table.organizationId, table.status),
+    scimProviderStatusCheck("scim_providers_status_chk", table),
+  ],
+);
+
+export const scimTokens = pgTable(
+  "scim_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => scimProviders.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    name: varchar("name", { length: 160 }).notNull().default("SCIM token"),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("scim_tokens_hash_idx").on(table.tokenHash),
+    index("scim_tokens_org_provider_status_idx").on(table.organizationId, table.providerId, table.status),
+    index("scim_tokens_expires_idx").on(table.expiresAt),
+    scimTokenStatusCheck("scim_tokens_status_chk", table),
+  ],
+);
+
+export const scimSyncJobs = pgTable(
+  "scim_sync_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    providerId: uuid("provider_id")
+      .references(() => scimProviders.id, { onDelete: "set null" }),
+    operationType: varchar("operation_type", { length: 48 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("queued"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    errorSummary: text("error_summary"),
+    resourceType: varchar("resource_type", { length: 32 }),
+    resourceId: varchar("resource_id", { length: 255 }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    index("scim_sync_jobs_org_status_idx").on(table.organizationId, table.status, table.createdAt),
+    index("scim_sync_jobs_provider_status_idx").on(table.providerId, table.status),
+    scimSyncOperationCheck("scim_sync_jobs_operation_chk", table),
+    scimSyncStatusCheck("scim_sync_jobs_status_chk", table),
+  ],
+);
+
+export const scimEvents = pgTable(
+  "scim_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    providerId: uuid("provider_id")
+      .references(() => scimProviders.id, { onDelete: "set null" }),
+    syncJobId: uuid("sync_job_id").references(() => scimSyncJobs.id, { onDelete: "set null" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    membershipId: uuid("membership_id").references(() => organizationMemberships.id, {
+      onDelete: "set null",
+    }),
+    eventType: varchar("event_type", { length: 160 }).notNull(),
+    result: varchar("result", { length: 32 }).notNull(),
+    externalIdHash: text("external_id_hash"),
+    resourceType: varchar("resource_type", { length: 32 }),
+    resourceId: varchar("resource_id", { length: 255 }),
+    summary: text("summary"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("scim_events_org_created_idx").on(table.organizationId, table.createdAt),
+    index("scim_events_provider_created_idx").on(table.providerId, table.createdAt),
+    index("scim_events_user_created_idx").on(table.userId, table.createdAt),
+    index("scim_events_external_idx").on(table.externalIdHash),
+    scimEventTypeCheck("scim_events_type_chk", table),
+    scimEventResultCheck("scim_events_result_chk", table),
+  ],
+);
+
+export const scimGroupMappings = pgTable(
+  "scim_group_mappings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    providerId: uuid("provider_id")
+      .notNull()
+      .references(() => scimProviders.id, { onDelete: "cascade" }),
+    externalGroupIdHash: text("external_group_id_hash").notNull(),
+    externalDisplayName: varchar("external_display_name", { length: 160 }).notNull(),
+    roleId: uuid("role_id").references(() => roles.id, { onDelete: "set null" }),
+    status: varchar("status", { length: 32 }).notNull().default("pending"),
+    approvedByUserId: uuid("approved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("scim_group_mappings_provider_group_idx").on(
+      table.providerId,
+      table.externalGroupIdHash,
+    ),
+    index("scim_group_mappings_org_status_idx").on(table.organizationId, table.status),
+    index("scim_group_mappings_role_idx").on(table.roleId),
+    check("scim_group_mappings_status_chk", sql`${table.status} in ('pending', 'approved', 'disabled', 'deleted')`),
+  ],
+);
+
+export const identitySecurityEvents = pgTable(
+  "identity_security_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    providerId: uuid("provider_id").references(() => identityProviders.id, {
+      onDelete: "set null",
+    }),
+    scimProviderId: uuid("scim_provider_id").references(() => scimProviders.id, {
+      onDelete: "set null",
+    }),
+    auditEventId: uuid("audit_event_id").references(() => identityAuditEvents.id, {
+      onDelete: "set null",
+    }),
+    eventType: varchar("event_type", { length: 160 }).notNull(),
+    category: varchar("category", { length: 48 }).notNull(),
+    result: varchar("result", { length: 32 }).notNull().default("success"),
+    severity: varchar("severity", { length: 32 }).notNull().default("low"),
+    riskScore: integer("risk_score").notNull().default(0),
+    action: varchar("action", { length: 32 }).notNull().default("monitor"),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    userAgent: text("user_agent"),
+    source: varchar("source", { length: 80 }).notNull().default("identity"),
+    summary: text("summary"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("identity_security_events_org_created_idx").on(table.organizationId, table.createdAt),
+    index("identity_security_events_user_created_idx").on(table.userId, table.createdAt),
+    index("identity_security_events_type_created_idx").on(table.eventType, table.createdAt),
+    index("identity_security_events_risk_idx").on(table.organizationId, table.riskScore),
+    identitySecurityEventTypeCheck("identity_security_events_type_chk", table),
+    identitySecurityCategoryCheck("identity_security_events_category_chk", table),
+    identityAuditResultCheck("identity_security_events_result_chk", table),
+    identityRiskSeverityCheck("identity_security_events_severity_chk", table),
+    identitySecurityActionCheck("identity_security_events_action_chk", table),
+    check("identity_security_events_risk_score_chk", sql`${table.riskScore} between 0 and 100`),
+  ],
+);
+
+export const identityRiskScores = pgTable(
+  "identity_risk_scores",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    subjectType: varchar("subject_type", { length: 48 }).notNull().default("user"),
+    subjectId: varchar("subject_id", { length: 160 }),
+    score: integer("score").notNull().default(0),
+    severity: varchar("severity", { length: 32 }).notNull().default("low"),
+    confidence: real("confidence").notNull().default(0),
+    status: varchar("status", { length: 32 }).notNull().default("active"),
+    recommendedAction: varchar("recommended_action", { length: 32 }).notNull().default("monitor"),
+    factors: jsonb("factors").notNull().default(sql`'[]'::jsonb`),
+    lastSignalAt: timestamp("last_signal_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("identity_risk_scores_org_status_idx").on(table.organizationId, table.status),
+    index("identity_risk_scores_org_score_idx").on(table.organizationId, table.score),
+    index("identity_risk_scores_user_idx").on(table.userId),
+    index("identity_risk_scores_subject_idx").on(table.organizationId, table.subjectType, table.subjectId),
+    identityRiskSeverityCheck("identity_risk_scores_severity_chk", table),
+    identityRiskStatusCheck("identity_risk_scores_status_chk", table),
+    check("identity_risk_scores_action_chk", sql`${table.recommendedAction} in ('monitor', 'require_mfa', 'restrict_session', 'alert')`),
+    check("identity_risk_scores_score_chk", sql`${table.score} between 0 and 100`),
+    check("identity_risk_scores_confidence_chk", sql`${table.confidence} between 0 and 1`),
+    check("identity_risk_scores_subject_type_chk", sql`${table.subjectType} in ('user', 'client', 'provider', 'organization')`),
+  ],
+);
+
+export const identityAccessReviews = pgTable(
+  "identity_access_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 160 }).notNull(),
+    reviewType: varchar("review_type", { length: 48 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("draft"),
+    scope: jsonb("scope").notNull().default(sql`'{}'::jsonb`),
+    summary: text("summary"),
+    findings: jsonb("findings").notNull().default(sql`'[]'::jsonb`),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    assignedToUserId: uuid("assigned_to_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("identity_access_reviews_org_status_idx").on(table.organizationId, table.status),
+    index("identity_access_reviews_org_due_idx").on(table.organizationId, table.dueAt),
+    index("identity_access_reviews_type_idx").on(table.organizationId, table.reviewType),
+    identityAccessReviewTypeCheck("identity_access_reviews_type_chk", table),
+    identityAccessReviewStatusCheck("identity_access_reviews_status_chk", table),
+  ],
+);
+
+export const identityComplianceReports = pgTable(
+  "identity_compliance_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    reportType: varchar("report_type", { length: 64 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("generated"),
+    windowStart: timestamp("window_start", { withTimezone: true }),
+    windowEnd: timestamp("window_end", { withTimezone: true }),
+    generatedByUserId: uuid("generated_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
+    metrics: jsonb("metrics").notNull().default(sql`'{}'::jsonb`),
+    findings: jsonb("findings").notNull().default(sql`'[]'::jsonb`),
+    evidenceRef: varchar("evidence_ref", { length: 160 }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("identity_compliance_reports_org_type_idx").on(table.organizationId, table.reportType),
+    index("identity_compliance_reports_org_generated_idx").on(table.organizationId, table.generatedAt),
+    identityComplianceReportTypeCheck("identity_compliance_reports_type_chk", table),
+    identityComplianceReportStatusCheck("identity_compliance_reports_status_chk", table),
+  ],
+);
+
+export const identityMetrics = pgTable(
+  "identity_metrics",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    metricType: varchar("metric_type", { length: 64 }).notNull(),
+    metricValue: real("metric_value").notNull().default(0),
+    numerator: integer("numerator").notNull().default(0),
+    denominator: integer("denominator").notNull().default(0),
+    status: varchar("status", { length: 32 }).notNull().default("unknown"),
+    bucketStart: timestamp("bucket_start", { withTimezone: true }).notNull(),
+    bucketEnd: timestamp("bucket_end", { withTimezone: true }).notNull(),
+    dimensions: jsonb("dimensions").notNull().default(sql`'{}'::jsonb`),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    index("identity_metrics_org_type_bucket_idx").on(table.organizationId, table.metricType, table.bucketStart),
+    index("identity_metrics_org_status_idx").on(table.organizationId, table.status),
+    identityMetricTypeCheck("identity_metrics_type_chk", table),
+    identityMetricStatusCheck("identity_metrics_status_chk", table),
+    check("identity_metrics_value_chk", sql`${table.metricValue} between 0 and 100`),
+    check("identity_metrics_count_chk", sql`${table.numerator} >= 0 and ${table.denominator} >= 0`),
+  ],
+);
+
+export const identityAuditReports = pgTable(
+  "identity_audit_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    reportType: varchar("report_type", { length: 64 }).notNull(),
+    exportFormat: varchar("export_format", { length: 32 }).notNull().default("json"),
+    status: varchar("status", { length: 32 }).notNull().default("generated"),
+    windowStart: timestamp("window_start", { withTimezone: true }),
+    windowEnd: timestamp("window_end", { withTimezone: true }),
+    generatedByUserId: uuid("generated_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
+    rowCount: integer("row_count").notNull().default(0),
+    reportPayload: jsonb("report_payload").notNull().default(sql`'{}'::jsonb`),
+    evidenceRef: varchar("evidence_ref", { length: 160 }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("identity_audit_reports_org_type_idx").on(table.organizationId, table.reportType),
+    index("identity_audit_reports_org_generated_idx").on(table.organizationId, table.generatedAt),
+    identityAuditReportTypeCheck("identity_audit_reports_type_chk", table),
+    identityAuditReportFormatCheck("identity_audit_reports_format_chk", table),
+    identityAuditReportStatusCheck("identity_audit_reports_status_chk", table),
+    check("identity_audit_reports_row_count_chk", sql`${table.rowCount} >= 0`),
+  ],
+);
+
+export const breakGlassAdministrators = pgTable(
+  "break_glass_administrators",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 32 }).notNull().default("disabled"),
+    reason: text("reason"),
+    mfaRequired: boolean("mfa_required").notNull().default(true),
+    approvedByUserId: uuid("approved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("break_glass_admins_org_user_idx").on(table.organizationId, table.userId),
+    index("break_glass_admins_org_status_idx").on(table.organizationId, table.status),
+    index("break_glass_admins_expires_idx").on(table.expiresAt),
+    breakGlassAdminStatusCheck("break_glass_admins_status_chk", table),
+  ],
+);
+
+export const identityRecoveryWorkflows = pgTable(
+  "identity_recovery_workflows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    targetUserId: uuid("target_user_id").references(() => users.id, { onDelete: "set null" }),
+    requestedByUserId: uuid("requested_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    workflowType: varchar("workflow_type", { length: 64 }).notNull(),
+    status: varchar("status", { length: 32 }).notNull().default("requested"),
+    reason: text("reason"),
+    mfaRequired: boolean("mfa_required").notNull().default(true),
+    approvalRequired: boolean("approval_required").notNull().default(true),
+    requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    ...timestamps,
+    ...deletedAt,
+  },
+  (table) => [
+    index("identity_recovery_workflows_org_status_idx").on(table.organizationId, table.status),
+    index("identity_recovery_workflows_target_idx").on(table.targetUserId),
+    index("identity_recovery_workflows_expires_idx").on(table.expiresAt),
+    identityRecoveryWorkflowTypeCheck("identity_recovery_workflows_type_chk", table),
+    identityRecoveryWorkflowStatusCheck("identity_recovery_workflows_status_chk", table),
+  ],
+);
+
+export const identityRecoveryEvents = pgTable(
+  "identity_recovery_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    workflowId: uuid("workflow_id").references(() => identityRecoveryWorkflows.id, {
+      onDelete: "set null",
+    }),
+    breakGlassAdministratorId: uuid("break_glass_administrator_id").references(
+      () => breakGlassAdministrators.id,
+      { onDelete: "set null" },
+    ),
+    actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    targetUserId: uuid("target_user_id").references(() => users.id, { onDelete: "set null" }),
+    eventType: varchar("event_type", { length: 160 }).notNull(),
+    result: varchar("result", { length: 32 }).notNull().default("success"),
+    summary: text("summary"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("identity_recovery_events_org_created_idx").on(table.organizationId, table.createdAt),
+    index("identity_recovery_events_workflow_idx").on(table.workflowId),
+    index("identity_recovery_events_target_idx").on(table.targetUserId),
+    identityRecoveryEventTypeCheck("identity_recovery_events_type_chk", table),
+    identityAuditResultCheck("identity_recovery_events_result_chk", table),
   ],
 );
 
@@ -664,6 +1522,40 @@ export const auditEvents = pgTable(
       "audit_events_severity_check",
       sql`${table.severity} in ('info', 'low', 'medium', 'high', 'critical')`,
     ),
+  ],
+);
+
+export const identityAuditEvents = pgTable(
+  "identity_audit_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").references(() => organizations.id, {
+      onDelete: "set null",
+    }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    providerId: uuid("provider_id").references(() => identityProviders.id, {
+      onDelete: "set null",
+    }),
+    externalIdentityId: uuid("external_identity_id").references(() => externalIdentities.id, {
+      onDelete: "set null",
+    }),
+    eventType: varchar("event_type", { length: 160 }).notNull(),
+    action: varchar("action", { length: 160 }).notNull(),
+    result: varchar("result", { length: 32 }).notNull(),
+    ipAddress: varchar("ip_address", { length: 45 }),
+    userAgent: text("user_agent"),
+    requestId: varchar("request_id", { length: 160 }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("identity_audit_events_org_created_idx").on(table.organizationId, table.createdAt),
+    index("identity_audit_events_user_created_idx").on(table.userId, table.createdAt),
+    index("identity_audit_events_actor_created_idx").on(table.actorUserId, table.createdAt),
+    index("identity_audit_events_provider_created_idx").on(table.providerId, table.createdAt),
+    index("identity_audit_events_request_id_idx").on(table.requestId),
+    identityAuditResultCheck("identity_audit_events_result_chk", table),
   ],
 );
 

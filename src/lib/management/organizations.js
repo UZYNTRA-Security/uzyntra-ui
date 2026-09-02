@@ -18,6 +18,10 @@ import {
   createAuditEvent,
 } from "../audit/index.js";
 import { updateSessionOrganization } from "../auth/session.js";
+import {
+  IDENTITY_AUDIT_EVENT_TYPES,
+  recordIdentityAuditEvent,
+} from "../identity/index.js";
 import { boundedLimit, safeString } from "./tokens.js";
 
 export async function listOrganizationsForUser({ database = db(), userId } = {}) {
@@ -211,6 +215,10 @@ export async function updateOrganizationSettings({
   mfaRequired,
   sessionTimeoutSeconds,
   allowedEmailDomains,
+  ssoMode,
+  ssoAllowedDomains,
+  ssoPasswordLoginDisabled,
+  ssoMfaRequired,
   securityLevel,
   auditContext,
 } = {}) {
@@ -225,6 +233,22 @@ export async function updateOrganizationSettings({
   }
   if (allowedEmailDomains !== undefined) {
     changes.allowedEmailDomains = normalizeDomains(allowedEmailDomains);
+  }
+  if (ssoMode !== undefined) {
+    const normalized = safeString(ssoMode, 32);
+    if (!["optional", "required", "disabled"].includes(normalized)) {
+      throw new Error("sso mode is invalid");
+    }
+    changes.ssoMode = normalized;
+  }
+  if (ssoAllowedDomains !== undefined) {
+    changes.ssoAllowedDomains = normalizeDomains(ssoAllowedDomains);
+  }
+  if (typeof ssoPasswordLoginDisabled === "boolean") {
+    changes.ssoPasswordLoginDisabled = ssoPasswordLoginDisabled;
+  }
+  if (typeof ssoMfaRequired === "boolean") {
+    changes.ssoMfaRequired = ssoMfaRequired;
   }
   if (securityLevel !== undefined) {
     const normalized = safeString(securityLevel, 32);
@@ -260,9 +284,44 @@ export async function updateOrganizationSettings({
       userAgent: auditContext?.userAgent,
       metadata: changes,
     });
+
+    if (hasSsoPolicyChange(changes)) {
+      await recordIdentityAuditEvent({
+        database,
+        eventType: IDENTITY_AUDIT_EVENT_TYPES.SSO_POLICY_CHANGED,
+        action: IDENTITY_AUDIT_EVENT_TYPES.SSO_POLICY_CHANGED,
+        result: AUDIT_RESULTS.SUCCESS,
+        organizationId,
+        actorUserId: auditContext?.userId,
+        requestId: auditContext?.requestId,
+        ipAddress: auditContext?.ipAddress,
+        userAgent: auditContext?.userAgent,
+        metadata: ssoPolicyMetadata(changes),
+      });
+    }
   }
 
   return updated || null;
+}
+
+function hasSsoPolicyChange(changes = {}) {
+  return [
+    "ssoMode",
+    "ssoAllowedDomains",
+    "ssoPasswordLoginDisabled",
+    "ssoMfaRequired",
+  ].some((key) => Object.prototype.hasOwnProperty.call(changes, key));
+}
+
+function ssoPolicyMetadata(changes = {}) {
+  const metadata = {};
+  if (changes.ssoMode !== undefined) metadata.ssoMode = changes.ssoMode;
+  if (changes.ssoAllowedDomains !== undefined) metadata.ssoAllowedDomains = changes.ssoAllowedDomains;
+  if (changes.ssoPasswordLoginDisabled !== undefined) {
+    metadata.ssoPasswordLoginDisabled = changes.ssoPasswordLoginDisabled;
+  }
+  if (changes.ssoMfaRequired !== undefined) metadata.ssoMfaRequired = changes.ssoMfaRequired;
+  return metadata;
 }
 
 export async function activeOwnerCount(database, organizationId, excludeMembershipId) {

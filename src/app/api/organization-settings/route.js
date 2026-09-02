@@ -47,6 +47,10 @@ export async function PATCH(request) {
       mfaRequired: body.data?.mfaRequired,
       sessionTimeoutSeconds: body.data?.sessionTimeoutSeconds,
       allowedEmailDomains: body.data?.allowedEmailDomains,
+      ssoMode: body.data?.ssoMode,
+      ssoAllowedDomains: body.data?.ssoAllowedDomains,
+      ssoPasswordLoginDisabled: body.data?.ssoPasswordLoginDisabled,
+      ssoMfaRequired: body.data?.ssoMfaRequired,
       securityLevel: body.data?.securityLevel,
       auditContext: auth.auditContext,
     });

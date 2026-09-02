@@ -106,6 +106,55 @@
       "when": 1787830422999,
       "tag": "0014_magenta_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787851377858,
+      "tag": "0015_damp_mandarin",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1787852538220,
+      "tag": "0016_thin_firelord",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787853586663,
+      "tag": "0017_bitter_squadron_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787900065370,
+      "tag": "0018_tricky_cerise",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787901821795,
+      "tag": "0019_sleepy_captain_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788319483286,
+      "tag": "0020_cuddly_fallen_one",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1788320781623,
+      "tag": "0021_glossy_marvex",
+      "breakpoints": true
     }
   ]
 }
